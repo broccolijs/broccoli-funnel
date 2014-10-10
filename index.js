@@ -10,9 +10,18 @@ var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
 var generateRandomString = require('./lib/generate-random-string');
 
+function makeDictionary() {
+  var cache = Object.create(null);
+
+  cache['_dict'] = null;
+  delete cache['_dict'];
+
+  return cache;
+}
+
 function Funnel(inputTree, options) {
   this.inputTree = inputTree;
-  this._includeFileCache = Object.create(null);
+  this._includeFileCache = makeDictionary();
   this._tmpDir = path.resolve(path.join(this.tmpRoot, 'funnel-dest_' + generateRandomString(6) + '.tmp'));
 
   for (var key in options) {
