@@ -10,8 +10,6 @@ var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
 var generateRandomString = require('./lib/generate-random-string');
 
-//var helpers = require('broccoli-kitchen-sink-helpers');
-
 function Funnel(inputTree, options) {
   this.inputTree = inputTree;
   this._includeFileCache = Object.create(null);

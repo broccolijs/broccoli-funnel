@@ -17,11 +17,8 @@
     "javascript"
   ],
   "dependencies": {
-    "broccoli-kitchen-sink-helpers": "^0.2.5",
     "core-object": "0.0.2",
     "mkdirp": "^0.5.0",
-    "promise-map-series": "^0.2.0",
-    "quick-temp": "^0.1.2",
     "rimraf": "^2.2.8",
     "rsvp": "^3.0.14",
     "symlink-or-copy": "^1.0.0",
