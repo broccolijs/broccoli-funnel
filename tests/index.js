@@ -178,6 +178,21 @@ describe('broccoli-funnel', function(){
         expect(walkSync(outputPath)).to.eql(expected);
       });
     });
+
+    it('creates its output directory even if no files are matched', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        exclude: [ /.*/ ]
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+      .then(function(results) {
+        var outputPath = results.directory;
+
+        expect(walkSync(outputPath)).to.eql([ ]);
+      });
+    });
   });
 
   describe('includeFile', function() {

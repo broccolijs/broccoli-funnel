@@ -70,6 +70,8 @@ Funnel.prototype.handleReadTree = function(inputTreeRoot) {
   if (this.shouldLinkRoots()) {
     this._copy(inputPath, this.destPath);
   } else {
+    mkdirp.sync(this._tmpDir);
+
     this.processFilters(inputPath);
   }
 
