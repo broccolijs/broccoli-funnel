@@ -1,9 +1,11 @@
+'use strict';
+
 var fs = require('fs');
 var RSVP = require('rsvp');
 var path = require('path');
 var rimraf = RSVP.denodeify(require('rimraf'));
 var mkdirp = require('mkdirp');
-var CoreObject = require("core-object");
+var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
 var generateRandomString = require('./lib/generate-random-string');
 
@@ -11,6 +13,8 @@ var generateRandomString = require('./lib/generate-random-string');
 
 function Funnel(inputTree, options) {
   this.inputTree = inputTree;
+  this._includeFileCache = Object.create(null);
+  this._tmpDir = path.resolve(path.join(this.tmpRoot, 'funnel-dest_' + generateRandomString(6) + '.tmp'));
 
   for (var key in options) {
     if (options.hasOwnProperty(key)) {
@@ -18,24 +22,16 @@ function Funnel(inputTree, options) {
     }
   }
 
-  this._includeFileCache = Object.create(null);
-  this._tmpDir = path.resolve(path.join(this.tmpRoot, 'funnel-dest_' + generateRandomString(6) + '.tmp'));
-
-  this.inputTree = inputTree;
   this.setupDestPaths();
 
-  if (!this.include) {
-    this.include = null;
-  } else if (!Array.isArray(this.include)) {
-    throw new Error("Invalid include option, it must be an array.")
+  if (this.include && !Array.isArray(this.include)) {
+    throw new Error('Invalid include option, it must be an array.');
   }
 
-  if (!this.exclude) {
-    this.exclude = null;
-  } else if (!Array.isArray(this.exclude)) {
-    throw new Error("Invalid exclude option, it must be an array.")
+  if (this.exclude && !Array.isArray(this.exclude)) {
+    throw new Error('Invalid exclude option, it must be an array.');
   }
-};
+}
 
 Funnel.__proto__ = CoreObject;
 Funnel.prototype.constructor = Funnel;

@@ -1,14 +1,9 @@
 'use strict';
 
-var fs = require('fs');
 var path = require('path');
 var expect = require('expect.js');
-var RSVP = require('rsvp');
-var rimraf = require('rimraf');
-var root = process.cwd();
 var walkSync = require('walk-sync');
 var broccoli = require('broccoli');
-var helpers = require('broccoli-kitchen-sink-helpers');
 
 require('mocha-jshint')();
 
