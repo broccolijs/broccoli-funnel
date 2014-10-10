@@ -24,10 +24,10 @@ function Funnel(inputTree, options) {
   this._includeFileCache = makeDictionary();
   this._tmpDir = path.resolve(path.join(this.tmpRoot, 'funnel-dest_' + generateRandomString(6) + '.tmp'));
 
-  for (var key in options) {
-    if (options.hasOwnProperty(key)) {
-      this[key] = options[key];
-    }
+  var keys = Object.keys(options || {});
+  for (var i = 0, l = keys.length; i < l; i++) {
+    var key = keys[i];
+    this[key] = options[key];
   }
 
   this.setupDestPaths();
