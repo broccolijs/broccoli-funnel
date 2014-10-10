@@ -111,13 +111,15 @@ Funnel.prototype.processFilters = function(inputPath) {
 };
 
 Funnel.prototype.includeFile = function(relativePath) {
-  if (this._includeFileCache[relativePath] !== undefined) {
-    return this._includeFileCache[relativePath];
+  var includeFileCache = this._includeFileCache;
+
+  if (includeFileCache[relativePath] !== undefined) {
+    return includeFileCache[relativePath];
   }
 
   // do not include directories, only files
   if (relativePath[relativePath.length - 1] === '/') {
-    return this._includeFileCache[relativePath] = false;
+    return includeFileCache[relativePath] = false;
   }
 
   var i, l;
@@ -127,7 +129,7 @@ Funnel.prototype.includeFile = function(relativePath) {
     for (i = 0, l = this.exclude.length; i < l; i++) {
       // An exclude pattern that returns true should be ignored
       if (this.exclude[i].test(relativePath) === true) {
-        return this._includeFileCache[relativePath] = false;
+        return includeFileCache[relativePath] = false;
       }
     }
   }
@@ -138,16 +140,16 @@ Funnel.prototype.includeFile = function(relativePath) {
       // An include pattern that returns true (and wasn't excluded at all)
       // should _not_ be ignored
       if (this.include[i].test(relativePath) === true) {
-        return this._includeFileCache[relativePath] = true;
+        return includeFileCache[relativePath] = true;
       }
     }
 
     // If no include patterns were matched, ignore this file.
-    return this._includeFileCache[relativePath] = false;
+    return includeFileCache[relativePath] = false;
   }
 
   // Otherwise, don't ignore this file
-  return this._includeFileCache[relativePath] = true;
+  return includeFileCache[relativePath] = true;
 };
 
 Funnel.prototype._copy = function(sourcePath, destPath) {
