@@ -62,7 +62,7 @@ Funnel.prototype.shouldLinkRoots = function() {
 Funnel.prototype.read = function(readTree) {
   var inputTree = this.inputTree;
 
-  return RSVP.resolve()
+  return RSVP.Promise.resolve()
     .then(this.cleanup.bind(this))
     .then(function() {
       return readTree(inputTree);
