@@ -66,14 +66,15 @@ describe('broccoli-funnel', function(){
   });
 
   describe('with filtering options', function() {
-    it('can take an include pattern', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
-        include: [ /.png$/ ]
-      });
+    describe('include filtering', function() {
+      it('can take a pattern', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+        var tree = new Funnel(inputPath, {
+          include: [ /.png$/ ]
+        });
 
-      builder = new broccoli.Builder(tree);
-      return builder.build()
+        builder = new broccoli.Builder(tree);
+        return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
 
@@ -85,6 +86,97 @@ describe('broccoli-funnel', function(){
 
           expect(walkSync(outputPath)).to.eql(expected);
         });
+      });
+
+      it('can take multiple patterns', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+        var tree = new Funnel(inputPath, {
+          include: [ /.png$/, /.js$/ ]
+        });
+
+        builder = new broccoli.Builder(tree);
+        return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+            'subdir1/subsubdir2/',
+            'subdir1/subsubdir2/some.js'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+      });
+    });
+
+    describe('exclude filtering', function() {
+      it('can take a pattern', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+        var tree = new Funnel(inputPath, {
+          exclude: [ /.png$/ ]
+        });
+
+        builder = new broccoli.Builder(tree);
+        return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'root-file.txt',
+            'subdir1/',
+            'subdir1/subsubdir2/',
+            'subdir1/subsubdir2/some.js',
+            'subdir2/',
+            'subdir2/bar.css'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+      });
+
+      it('can take multiple patterns', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+        var tree = new Funnel(inputPath, {
+          exclude: [ /.png$/, /.js$/ ]
+        });
+
+        builder = new broccoli.Builder(tree);
+        return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'root-file.txt',
+            'subdir2/',
+            'subdir2/bar.css'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+      });
+    });
+
+    it('combined filtering', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        exclude: [ /.png$/, /.js$/ ],
+        include: [ /.txt$/ ]
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+      .then(function(results) {
+        var outputPath = results.directory;
+
+        var expected = [
+          'root-file.txt',
+        ];
+
+        expect(walkSync(outputPath)).to.eql(expected);
+      });
     });
   });
 });
