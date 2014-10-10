@@ -179,4 +179,49 @@ describe('broccoli-funnel', function(){
       });
     });
   });
+
+  describe('includeFile', function() {
+    var tree;
+
+    beforeEach(function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+
+      tree = new Funnel(inputPath);
+    });
+
+    it('returns false if the path is included in an exclude filter', function() {
+      tree.exclude = [ /.foo$/, /.bar$/ ];
+
+      expect(tree.includeFile('blah/blah/blah.foo')).to.not.be.ok();
+      expect(tree.includeFile('blah/blah/blah.bar')).to.not.be.ok();
+      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+    });
+
+    it('returns true if the path is included in an include filter', function() {
+      tree.include = [ /.foo$/, /.bar$/ ];
+
+      expect(tree.includeFile('blah/blah/blah.foo')).to.be.ok();
+      expect(tree.includeFile('blah/blah/blah.bar')).to.be.ok();
+    });
+
+    it('returns false if the path is not included in an include filter', function() {
+      tree.include = [ /.foo$/, /.bar$/ ];
+
+      expect(tree.includeFile('blah/blah/blah.baz')).to.not.be.ok();
+    });
+
+    it('returns true if no patterns were used', function() {
+      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+    });
+
+    it('uses a cache to ensure we do not recalculate the filtering on subsequent attempts', function() {
+      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+
+      // changing the filter mid-run should have no result on
+      // previously calculated paths
+      tree.include = [ /.foo$/, /.bar$/ ];
+
+      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+    });
+  });
 });
