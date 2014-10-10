@@ -66,6 +66,25 @@ describe('broccoli-funnel', function(){
   });
 
   describe('with filtering options', function() {
+    it('can take an include pattern', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        include: [ /.png$/ ]
+      });
 
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+    });
   });
 });

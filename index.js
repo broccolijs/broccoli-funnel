@@ -5,6 +5,7 @@ var RSVP = require('rsvp');
 var path = require('path');
 var rimraf = RSVP.denodeify(require('rimraf'));
 var mkdirp = require('mkdirp');
+var walkSync = require('walk-sync');
 var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
 var generateRandomString = require('./lib/generate-random-string');
@@ -63,20 +64,15 @@ Funnel.prototype.read = function(readTree) {
 };
 
 Funnel.prototype.handleReadTree = function(inputTreeRoot) {
-  var destDir  = path.dirname(this.destPath);
-  if (!fs.existsSync(destDir)) {
-    mkdirp.sync(destDir);
-  }
-
   var inputPath = inputTreeRoot;
   if (this.srcDir) {
     inputPath = path.join(inputTreeRoot, this.srcDir);
   }
 
   if (this.shouldLinkRoots()) {
-    symlinkOrCopy.sync(inputPath, this.destPath);
+    this._copy(inputPath, this.destPath);
   } else {
-
+    this.processFilters(inputPath);
   }
 
   return this._tmpDir;
@@ -87,6 +83,71 @@ Funnel.prototype.cleanup = function() {
   if (fs.existsSync(this._tmpDir)) {
     return rimraf.sync(this._tmpDir);
   }
+};
+
+Funnel.prototype.processFilters = function(inputPath) {
+  var files = walkSync(inputPath);
+  var relativePath, fullInputPath, fullOutputPath;
+
+  for (var i = 0, l = files.length; i < l; i++) {
+    relativePath = files[i];
+
+    if (this.includeFile(relativePath)) {
+      fullInputPath = path.join(inputPath, relativePath);
+      fullOutputPath = path.join(this.destPath, relativePath);
+
+      this._copy(fullInputPath, fullOutputPath);
+    }
+  }
+};
+
+Funnel.prototype.includeFile = function(relativePath) {
+  if (this._includeFileCache[relativePath] !== undefined) {
+    return this._includeFileCache[relativePath];
+  }
+
+  // do not include directories, only files
+  if (relativePath[relativePath.length - 1] === '/') {
+    return this._includeFileCache[relativePath] = false;
+  }
+
+  var i, l;
+
+  // Check exclude patterns
+  if (this.exclude) {
+    for (i = 0, l = this.exclude.length; i < l; i++) {
+      // An exclude pattern that returns true should be ignored
+      if (this.exclude[i].test(relativePath) === true) {
+        return this._includeFileCache[relativePath] = false;
+      }
+    }
+  }
+
+  // Check include patterns
+  if (this.include && this.include.length > 0) {
+    for (i = 0, l = this.include.length; i < l; i++) {
+      // An include pattern that returns true (and wasn't excluded at all)
+      // should _not_ be ignored
+      if (this.include[i].test(relativePath) === true) {
+        return this._includeFileCache[relativePath] = true;
+      }
+    }
+
+    // If no include patterns were matched, ignore this file.
+    return this._includeFileCache[relativePath] = false;
+  }
+
+  // Otherwise, don't ignore this file
+  return this._includeFileCache[relativePath] = true;
+};
+
+Funnel.prototype._copy = function(sourcePath, destPath) {
+  var destDir  = path.dirname(destPath);
+  if (!fs.existsSync(destDir)) {
+    mkdirp.sync(destDir);
+  }
+
+  symlinkOrCopy.sync(sourcePath, destPath);
 };
 
 module.exports = Funnel;
