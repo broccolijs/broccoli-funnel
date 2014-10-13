@@ -21,7 +21,10 @@ function makeDictionary() {
 
 function Funnel(inputTree, options) {
   this.inputTree = inputTree;
+
   this._includeFileCache = makeDictionary();
+  this._destinationPathCache = makeDictionary();
+
   this._tmpDir = path.resolve(path.join(this.tmpRoot, 'funnel-dest_' + generateRandomString(6) + '.tmp'));
 
   var keys = Object.keys(options || {});
@@ -56,7 +59,7 @@ Funnel.prototype.setupDestPaths = function() {
 };
 
 Funnel.prototype.shouldLinkRoots = function() {
-  return !this.include && !this.exclude;
+  return !this.include && !this.exclude && !this.getDestinationPath;
 };
 
 Funnel.prototype.read = function(readTree) {
@@ -96,18 +99,31 @@ Funnel.prototype.cleanup = function() {
 
 Funnel.prototype.processFilters = function(inputPath) {
   var files = walkSync(inputPath);
-  var relativePath, fullInputPath, fullOutputPath;
+  var relativePath, destRelativePath, fullInputPath, fullOutputPath;
 
   for (var i = 0, l = files.length; i < l; i++) {
     relativePath = files[i];
 
     if (this.includeFile(relativePath)) {
-      fullInputPath = path.join(inputPath, relativePath);
-      fullOutputPath = path.join(this.destPath, relativePath);
+      fullInputPath    = path.join(inputPath, relativePath);
+      destRelativePath = this.lookupDestinationPath(relativePath);
+      fullOutputPath   = path.join(this.destPath, destRelativePath);
 
       this._copy(fullInputPath, fullOutputPath);
     }
   }
+};
+
+Funnel.prototype.lookupDestinationPath = function(relativePath) {
+  if (this._destinationPathCache[relativePath] !== undefined) {
+    return this._destinationPathCache[relativePath];
+  }
+
+  if (this.getDestinationPath) {
+    return this._destinationPathCache[relativePath] = this.getDestinationPath(relativePath);
+  }
+
+  return this._destinationPathCache[relativePath] = relativePath;
 };
 
 Funnel.prototype.includeFile = function(relativePath) {

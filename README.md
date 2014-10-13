@@ -50,6 +50,32 @@ An array of regular expressions that files and directories in the input tree can
 
 Default: `[]`
 
+----
+
+`getDestinationPath` *{Function}*
+
+This method will get called for each file, receiving the currently processing `relativePath` as its first argument. The value returned from
+`getDestinationPath` will be used as the destination for the new tree. This is a very simple way to move files from one path to another
+(replacing the need for `broccoli-file-mover` for example).
+
+The return value of this method is cached for each input file. This means that `getDestinationPath` will only be called once per `relativePath`.
+
+In the following example, `getDestinationPath` is used to move `main.js` to `ember-metal.js`:
+
+```javascript
+var tree = new Funnel('packages/ember-metal/lib', {
+  destDir: 'ember-metal',
+
+  getDestinationPath: function(relativePath) {
+    if (relativePath === 'lib/main.js') {
+      return 'ember-metal.js';
+    }
+
+    return relativePath;
+  }
+});
+```
+
 ## ZOMG!!! TESTS?!?!!?
 
 I know, right?
