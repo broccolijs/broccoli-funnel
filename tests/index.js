@@ -195,6 +195,25 @@ describe('broccoli-funnel', function(){
     });
   });
 
+  describe('with customized destination paths', function() {
+    it('uses custom getDestinationPath function if provided', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath);
+
+      tree.getDestinationPath = function(relativePath) {
+        return path.join('foo', relativePath);
+      };
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(path.join(outputPath, 'foo'))).to.eql(walkSync(inputPath));
+        });
+    });
+  });
+
   describe('includeFile', function() {
     var tree;
 
@@ -237,6 +256,54 @@ describe('broccoli-funnel', function(){
       tree.include = [ /.foo$/, /.bar$/ ];
 
       expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+    });
+  });
+
+  describe('lookupDestinationPath', function() {
+    var tree;
+
+    beforeEach(function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+
+      tree = new Funnel(inputPath);
+    });
+
+    it('returns the input path if no getDestinationPath method is defined', function() {
+      var relativePath = 'foo/bar/baz';
+
+      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(relativePath);
+    });
+
+    it('returns the output of getDestinationPath method if defined', function() {
+      var relativePath = 'foo/bar/baz';
+      var expected = 'blah/blah/blah';
+
+      tree.getDestinationPath = function() {
+        return expected;
+      };
+
+      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(expected);
+    });
+
+    it('only calls getDestinationPath once and caches result', function() {
+      var relativePath = 'foo/bar/baz';
+      var expected = 'blah/blah/blah';
+      var getDestPathValue = expected;
+      var getDestPathCalled = 0;
+
+      tree.getDestinationPath = function() {
+        getDestPathCalled++;
+
+        return expected;
+      };
+
+      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(getDestPathCalled).to.be.equal(1);
+
+      getDestPathValue = 'some/other/thing';
+
+      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(getDestPathCalled).to.be.equal(1);
     });
   });
 });
