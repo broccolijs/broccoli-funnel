@@ -66,6 +66,35 @@ describe('broccoli-funnel', function(){
   });
 
   describe('with filtering options', function() {
+
+    describe('filtering with `files`', function() {
+      it('can take a list of files', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+        var tree = new Funnel(inputPath, {
+          files: [
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/bar.css'
+          ]
+        });
+
+        builder = new broccoli.Builder(tree);
+        return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/',
+            'subdir2/bar.css'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+      });
+    });
+
     describe('include filtering', function() {
       it('can take a pattern', function() {
         var inputPath = path.join(fixturePath, 'dir1');
