@@ -262,6 +262,57 @@ var nobodyLikesTodosAnyway = new Funnel('src', {
 
 module.exports = nobodyLikesTodosAnyway;
 ```
+
+----
+
+`files` *{Array of Strings}*
+
+One or more relative file paths. Files within the tree whose relative paths match
+will be copied (with the location inside their parent directories
+preserved) to the `destDir`.
+
+Default: `[]`.
+
+If your project has the following file structure
+
+```shell
+.
+├── Brocfile.js
+└── src/
+    ├── css/
+    │   ├── reset.css
+    │   └── todos.css
+    ├── icons/
+    │   ├── check-mark.png
+    │   └── logo.jpg
+    └── javascript/
+        ├── app.js
+        └── todo.js
+```
+
+You can select a specific list of files copy those subtrees to a
+new location, preserving their location within parent directories:
+
+```javascript
+var Funnel = require('broccoli-funnel');
+
+// finds these specific files and moves them to the destDir
+var someFiles = new Funnel('src', {
+  files: ['css/reset.css', 'icons/check-mark.png']
+});
+
+/*
+  someFiles is equivalent to the tree:
+  .
+  ├── css
+  │   └── reset.css
+  └── icons
+      └── check-mark.png
+*/
+
+module.exports = someFiles;
+```
+
 ----
 
 `getDestinationPath` *{Function}*

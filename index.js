@@ -35,6 +35,10 @@ function Funnel(inputTree, options) {
 
   this.setupDestPaths();
 
+  if (this.files && !Array.isArray(this.files)) {
+    throw new Error('Invalid files option, it must be an array.');
+  }
+
   if (this.include && !Array.isArray(this.include)) {
     throw new Error('Invalid include option, it must be an array.');
   }
@@ -59,7 +63,7 @@ Funnel.prototype.setupDestPaths = function() {
 };
 
 Funnel.prototype.shouldLinkRoots = function() {
-  return !this.include && !this.exclude && !this.getDestinationPath;
+  return !this.files && !this.include && !this.exclude && !this.getDestinationPath;
 };
 
 Funnel.prototype.read = function(readTree) {
@@ -139,6 +143,11 @@ Funnel.prototype.includeFile = function(relativePath) {
   }
 
   var i, l;
+
+  // Check for specific files listing
+  if (this.files) {
+    return includeFileCache[relativePath] = this.files.indexOf(relativePath) > -1;
+  }
 
   // Check exclude patterns
   if (this.exclude) {
