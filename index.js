@@ -47,7 +47,7 @@ function Funnel(inputTree, options) {
     throw new Error('Invalid exclude option, it must be an array.');
   }
 
-  this._instantiatedStack = (new Error()).stack
+  this._instantiatedStack = (new Error()).stack;
 }
 
 Funnel.__proto__ = CoreObject;
