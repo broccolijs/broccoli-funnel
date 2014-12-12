@@ -25,15 +25,11 @@ function Funnel(inputTree, options) {
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
 
-  this._tmpDir = path.resolve(path.join(this.tmpRoot, 'funnel-dest_' + generateRandomString(6) + '.tmp'));
-
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
     var key = keys[i];
     this[key] = options[key];
   }
-
-  this.setupDestPaths();
 
   if (this.files && !Array.isArray(this.files)) {
     throw new Error('Invalid files option, it must be an array.');
@@ -53,7 +49,7 @@ function Funnel(inputTree, options) {
 Funnel.__proto__ = CoreObject;
 Funnel.prototype.constructor = Funnel;
 
-Funnel.prototype.tmpRoot = 'tmp';
+Funnel.prototype.tmpRoot = null;
 
 Funnel.prototype.setupDestPaths = function() {
   this.destDir = this.destDir || '/';
@@ -69,6 +65,11 @@ Funnel.prototype.shouldLinkRoots = function() {
 };
 
 Funnel.prototype.read = function(readTree) {
+  if (!this._tmpDir) {
+    this._tmpDir = path.resolve(path.join(this.tmpRoot || 'tmp', 'funnel-dest_' + generateRandomString(6) + '.tmp'));
+    this.setupDestPaths();
+  }
+
   var inputTree = this.inputTree;
 
   return RSVP.Promise.resolve()
