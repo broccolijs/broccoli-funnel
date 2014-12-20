@@ -19,7 +19,7 @@ function makeDictionary() {
 }
 
 function Funnel(inputTree, options) {
-  if (!(this instanceof Funnel)) { return new Funnel(inputTree, options); }
+  if (!(this instanceof Funnel)) { console.error(new Error('You must use \'new Funnel\' to instantiate a broccoli-funnel item.')); }
 
   this.inputTree = inputTree;
 
