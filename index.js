@@ -15,11 +15,12 @@ function makeDictionary() {
 
   cache['_dict'] = null;
   delete cache['_dict'];
-
   return cache;
 }
 
 function Funnel(inputTree, options) {
+  if (!(this instanceof Funnel)) { console.error(new Error('You must use \'new Funnel\' to instantiate a broccoli-funnel item.')); }
+
   this.inputTree = inputTree;
 
   this._includeFileCache = makeDictionary();
