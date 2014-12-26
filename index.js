@@ -6,9 +6,11 @@ var path = require('path');
 var rimraf = RSVP.denodeify(require('rimraf'));
 var mkdirp = require('mkdirp');
 var walkSync = require('walk-sync');
+var Minimatch = require('minimatch').Minimatch;
 var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
 var generateRandomString = require('./lib/generate-random-string');
+
 
 function makeDictionary() {
   var cache = Object.create(null);
@@ -40,13 +42,8 @@ function Funnel(inputTree, options) {
     throw new Error('Invalid files option, it must be an array.');
   }
 
-  if (this.include && !Array.isArray(this.include)) {
-    throw new Error('Invalid include option, it must be an array.');
-  }
-
-  if (this.exclude && !Array.isArray(this.exclude)) {
-    throw new Error('Invalid exclude option, it must be an array.');
-  }
+  this._setupIncludes();
+  this._setupExcludes();
 
   this._instantiatedStack = (new Error()).stack;
 }
@@ -63,6 +60,52 @@ Funnel.prototype.setupDestPaths = function() {
   if (this.destPath[this.destPath.length -1] === '/') {
     this.destPath = this.destPath.slice(0, -1);
   }
+};
+
+Funnel.prototype._setupIncludes = function() {
+  if (!this.include) {
+    return;
+  }
+
+  if (!Array.isArray(this.include)) {
+    throw new Error('Invalid include option, it must be an array.');
+  }
+
+  for (var i = 0, l = this.include.length; i < l; i++) {
+    this.include[i] = this._processPattern(this.include[i]);
+  }
+};
+
+Funnel.prototype._setupExcludes = function() {
+  if (!this.exclude) {
+    return;
+  }
+
+  if (!Array.isArray(this.exclude)) {
+    throw new Error('Invalid exclude option, it must be an array.');
+  }
+
+  for (var i = 0, l = this.exclude.length; i < l; i++) {
+    this.exclude[i] = this._processPattern(this.exclude[i]);
+  }
+};
+
+Funnel.prototype._processPattern = function(pattern) {
+  if (pattern instanceof RegExp) {
+    return pattern;
+  }
+
+  var type = typeof pattern;
+
+  if (type === 'string') {
+    return new Minimatch(pattern);
+  }
+
+  if (type === 'function') {
+    return pattern;
+  }
+
+  throw new Error('include/exclude patterns can be a RegExp, glob string, or function. You supplied `' + typeof pattern +'`.');
 };
 
 Funnel.prototype.shouldLinkRoots = function() {
@@ -145,7 +188,7 @@ Funnel.prototype.includeFile = function(relativePath) {
     return includeFileCache[relativePath] = false;
   }
 
-  var i, l;
+  var i, l, pattern;
 
   // Check for specific files listing
   if (this.files) {
@@ -156,7 +199,9 @@ Funnel.prototype.includeFile = function(relativePath) {
   if (this.exclude) {
     for (i = 0, l = this.exclude.length; i < l; i++) {
       // An exclude pattern that returns true should be ignored
-      if (this.exclude[i].test(relativePath) === true) {
+      pattern = this.exclude[i];
+
+      if (this._matchesPattern(pattern, relativePath)) {
         return includeFileCache[relativePath] = false;
       }
     }
@@ -167,7 +212,9 @@ Funnel.prototype.includeFile = function(relativePath) {
     for (i = 0, l = this.include.length; i < l; i++) {
       // An include pattern that returns true (and wasn't excluded at all)
       // should _not_ be ignored
-      if (this.include[i].test(relativePath) === true) {
+      pattern = this.include[i];
+
+      if (this._matchesPattern(pattern, relativePath)) {
         return includeFileCache[relativePath] = true;
       }
     }
@@ -178,6 +225,16 @@ Funnel.prototype.includeFile = function(relativePath) {
 
   // Otherwise, don't ignore this file
   return includeFileCache[relativePath] = true;
+};
+
+Funnel.prototype._matchesPattern = function(pattern, relativePath) {
+  if (pattern.test) {
+    return pattern.test(relativePath);
+  } else if (pattern.match) {
+    return pattern.match(relativePath);
+  }
+
+  throw new Error('Pattern `' + pattern + '` was not a RegExp or Glob.');
 };
 
 Funnel.prototype.processFile = function(sourcePath, destPath /*, relativePath */) {

@@ -136,6 +136,22 @@ describe('broccoli-funnel', function(){
   });
 
   describe('with filtering options', function() {
+    function testFiltering(includes, excludes, files, expected) {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        include: includes,
+        exclude: excludes,
+        files: files
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+      .then(function(results) {
+        var outputPath = results.directory;
+
+        expect(walkSync(outputPath)).to.eql(expected);
+      });
+    }
 
     describe('filtering with `files`', function() {
       it('can take a list of files', function() {
@@ -166,96 +182,64 @@ describe('broccoli-funnel', function(){
     });
 
     describe('include filtering', function() {
-      it('can take a pattern', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
-        var tree = new Funnel(inputPath, {
-          include: [ /.png$/ ]
+      function testAllIncludeMatchers(glob, regexp, func, expected) {
+        it('can take a glob string', function() {
+          testFiltering(glob, null, null, expected);
         });
 
-        builder = new broccoli.Builder(tree);
-        return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
-
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir1/',
-            'subdir1/subsubdir1/foo.png'
-          ];
-
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
-      });
-
-      it('can take multiple patterns', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
-        var tree = new Funnel(inputPath, {
-          include: [ /.png$/, /.js$/ ]
+        it('can take a regexp pattern', function() {
+          testFiltering(regexp, null, null, expected);
         });
 
-        builder = new broccoli.Builder(tree);
-        return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
-
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir1/',
-            'subdir1/subsubdir1/foo.png',
-            'subdir1/subsubdir2/',
-            'subdir1/subsubdir2/some.js'
-          ];
-
-          expect(walkSync(outputPath)).to.eql(expected);
+        it.skip('can take a function', function() {
+          testFiltering(func, null, null, expected);
         });
-      });
+      }
+
+      testAllIncludeMatchers([ '**/*.png' ], [ /.png$/ ], null, [
+        'subdir1/',
+        'subdir1/subsubdir1/',
+        'subdir1/subsubdir1/foo.png'
+      ]);
+
+      testAllIncludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], null, [
+        'subdir1/',
+        'subdir1/subsubdir1/',
+        'subdir1/subsubdir1/foo.png',
+        'subdir1/subsubdir2/',
+        'subdir1/subsubdir2/some.js'
+      ]);
     });
 
     describe('exclude filtering', function() {
-      it('can take a pattern', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
-        var tree = new Funnel(inputPath, {
-          exclude: [ /.png$/ ]
+      function testAllExcludeMatchers(glob, regexp, func, expected) {
+        it('can take a glob string', function() {
+          testFiltering(null, glob, null, expected);
         });
 
-        builder = new broccoli.Builder(tree);
-        return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
-
-          var expected = [
-            'root-file.txt',
-            'subdir1/',
-            'subdir1/subsubdir2/',
-            'subdir1/subsubdir2/some.js',
-            'subdir2/',
-            'subdir2/bar.css'
-          ];
-
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
-      });
-
-      it('can take multiple patterns', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
-        var tree = new Funnel(inputPath, {
-          exclude: [ /.png$/, /.js$/ ]
+        it('can take a regexp pattern', function() {
+          testFiltering(null, regexp, null, expected);
         });
 
-        builder = new broccoli.Builder(tree);
-        return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
-
-          var expected = [
-            'root-file.txt',
-            'subdir2/',
-            'subdir2/bar.css'
-          ];
-
-          expect(walkSync(outputPath)).to.eql(expected);
+        it.skip('can take a function', function() {
+          testFiltering(null, func, null, expected);
         });
-      });
+      }
+
+      testAllExcludeMatchers([ '**/*.png' ], [ /.png$/ ], null, [
+        'root-file.txt',
+        'subdir1/',
+        'subdir1/subsubdir2/',
+        'subdir1/subsubdir2/some.js',
+        'subdir2/',
+        'subdir2/bar.css'
+      ]);
+
+      testAllExcludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], null, [
+        'root-file.txt',
+        'subdir2/',
+        'subdir2/bar.css'
+      ]);
     });
 
     it('combined filtering', function() {

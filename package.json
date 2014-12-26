@@ -18,6 +18,7 @@
   ],
   "dependencies": {
     "core-object": "0.0.2",
+    "minimatch": "^2.0.1",
     "mkdirp": "^0.5.0",
     "rimraf": "^2.2.8",
     "rsvp": "^3.0.14",
