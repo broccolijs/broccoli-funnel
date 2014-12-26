@@ -116,7 +116,7 @@ Funnel.prototype.processFilters = function(inputPath) {
       destRelativePath = this.lookupDestinationPath(relativePath);
       fullOutputPath   = path.join(this.destPath, destRelativePath);
 
-      this._copy(fullInputPath, fullOutputPath);
+      this.processFile(fullInputPath, fullOutputPath, relativePath);
     }
   }
 };
@@ -178,6 +178,10 @@ Funnel.prototype.includeFile = function(relativePath) {
 
   // Otherwise, don't ignore this file
   return includeFileCache[relativePath] = true;
+};
+
+Funnel.prototype.processFile = function(sourcePath, destPath /*, relativePath */) {
+  this._copy(sourcePath, destPath);
 };
 
 Funnel.prototype._copy = function(sourcePath, destPath) {

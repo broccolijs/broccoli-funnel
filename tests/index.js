@@ -19,6 +19,76 @@ describe('broccoli-funnel', function(){
     }
   });
 
+  describe('processFile', function() {
+    it('is not called when simply linking roots (aka no include/exclude)', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        processFile: function() {
+          throw new Error('should never be called');
+        }
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+        });
+    });
+
+    it('is called for each included file', function() {
+      var processFileArguments = [];
+
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        include: [ /.png$/, /.js$/ ],
+        destDir: 'foo',
+
+        processFile: function(sourcePath, destPath, relativePath) {
+          processFileArguments.push([sourcePath, destPath, relativePath]);
+        }
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+          var expected = [
+            [ path.join(fixturePath, 'dir1', 'subdir1/subsubdir1/foo.png'),
+              path.join(outputPath, 'foo/subdir1/subsubdir1/foo.png'),
+              'subdir1/subsubdir1/foo.png' ],
+            [ path.join(fixturePath, 'dir1', 'subdir1/subsubdir2/some.js'),
+              path.join(outputPath, 'foo/subdir1/subsubdir2/some.js'), 
+              'subdir1/subsubdir2/some.js' ]
+          ];
+
+          expect(processFileArguments).to.eql(expected);
+        });
+    });
+
+    it('is responsible for generating files in the destDir', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        include: [ /.png$/, /.js$/ ],
+        destDir: 'foo',
+
+        processFile: function() {
+          /* do nothing */
+        }
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql([]);
+        });
+    });
+
+  });
+
   describe('without filtering options', function() {
     it('simply returns a copy of the input tree', function() {
       var inputPath = path.join(fixturePath, 'dir1');
