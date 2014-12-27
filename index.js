@@ -42,8 +42,8 @@ function Funnel(inputTree, options) {
     throw new Error('Invalid files option, it must be an array.');
   }
 
-  this._setupIncludes();
-  this._setupExcludes();
+  this._setupFilter('include');
+  this._setupFilter('exclude');
 
   this._instantiatedStack = (new Error()).stack;
 }
@@ -62,31 +62,19 @@ Funnel.prototype.setupDestPaths = function() {
   }
 };
 
-Funnel.prototype._setupIncludes = function() {
-  if (!this.include) {
+Funnel.prototype._setupFilter = function(type) {
+  var filters = this[type];
+
+  if (!filters) {
     return;
   }
 
-  if (!Array.isArray(this.include)) {
-    throw new Error('Invalid include option, it must be an array.');
+  if (!Array.isArray(filters)) {
+    throw new Error('Invalid ' + type + ' option, it must be an array. You specified `' + typeof filters + '`.');
   }
 
-  for (var i = 0, l = this.include.length; i < l; i++) {
-    this.include[i] = this._processPattern(this.include[i]);
-  }
-};
-
-Funnel.prototype._setupExcludes = function() {
-  if (!this.exclude) {
-    return;
-  }
-
-  if (!Array.isArray(this.exclude)) {
-    throw new Error('Invalid exclude option, it must be an array.');
-  }
-
-  for (var i = 0, l = this.exclude.length; i < l; i++) {
-    this.exclude[i] = this._processPattern(this.exclude[i]);
+  for (var i = 0, l = filters.length; i < l; i++) {
+    filters[i] = this._processPattern(filters[i]);
   }
 };
 
@@ -228,13 +216,15 @@ Funnel.prototype.includeFile = function(relativePath) {
 };
 
 Funnel.prototype._matchesPattern = function(pattern, relativePath) {
-  if (pattern.test) {
+  if (pattern instanceof RegExp) {
     return pattern.test(relativePath);
-  } else if (pattern.match) {
+  } else if (pattern instanceof Minimatch) {
     return pattern.match(relativePath);
+  } else if (typeof pattern === 'function') {
+    return pattern(relativePath);
   }
 
-  throw new Error('Pattern `' + pattern + '` was not a RegExp or Glob.');
+  throw new Error('Pattern `' + pattern + '` was not a RegExp, Glob, or Function.');
 };
 
 Funnel.prototype.processFile = function(sourcePath, destPath /*, relativePath */) {
