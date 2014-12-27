@@ -153,6 +153,18 @@ describe('broccoli-funnel', function(){
       });
     }
 
+    function matchPNG(relativePath) {
+      var extension = path.extname(relativePath);
+
+      return extension === '.png';
+    }
+
+    function matchPNGAndJS(relativePath) {
+      var extension = path.extname(relativePath);
+
+      return extension === '.png' || extension === '.js';
+    }
+
     describe('filtering with `files`', function() {
       it('can take a list of files', function() {
         var inputPath = path.join(fixturePath, 'dir1');
@@ -184,25 +196,25 @@ describe('broccoli-funnel', function(){
     describe('include filtering', function() {
       function testAllIncludeMatchers(glob, regexp, func, expected) {
         it('can take a glob string', function() {
-          testFiltering(glob, null, null, expected);
+          return testFiltering(glob, null, null, expected);
         });
 
         it('can take a regexp pattern', function() {
-          testFiltering(regexp, null, null, expected);
+          return testFiltering(regexp, null, null, expected);
         });
 
-        it.skip('can take a function', function() {
-          testFiltering(func, null, null, expected);
+        it('can take a function', function() {
+          return testFiltering(func, null, null, expected);
         });
       }
 
-      testAllIncludeMatchers([ '**/*.png' ], [ /.png$/ ], null, [
+      testAllIncludeMatchers([ '**/*.png' ], [ /.png$/ ],[ matchPNG ], [
         'subdir1/',
         'subdir1/subsubdir1/',
         'subdir1/subsubdir1/foo.png'
       ]);
 
-      testAllIncludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], null, [
+      testAllIncludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], [ matchPNGAndJS ], [
         'subdir1/',
         'subdir1/subsubdir1/',
         'subdir1/subsubdir1/foo.png',
@@ -214,19 +226,19 @@ describe('broccoli-funnel', function(){
     describe('exclude filtering', function() {
       function testAllExcludeMatchers(glob, regexp, func, expected) {
         it('can take a glob string', function() {
-          testFiltering(null, glob, null, expected);
+          return testFiltering(null, glob, null, expected);
         });
 
         it('can take a regexp pattern', function() {
-          testFiltering(null, regexp, null, expected);
+          return testFiltering(null, regexp, null, expected);
         });
 
-        it.skip('can take a function', function() {
-          testFiltering(null, func, null, expected);
+        it('can take a function', function() {
+          return testFiltering(null, func, null, expected);
         });
       }
 
-      testAllExcludeMatchers([ '**/*.png' ], [ /.png$/ ], null, [
+      testAllExcludeMatchers([ '**/*.png' ], [ /.png$/ ], [ matchPNG ], [
         'root-file.txt',
         'subdir1/',
         'subdir1/subsubdir2/',
@@ -235,7 +247,7 @@ describe('broccoli-funnel', function(){
         'subdir2/bar.css'
       ]);
 
-      testAllExcludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], null, [
+      testAllExcludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], [ matchPNGAndJS ], [
         'root-file.txt',
         'subdir2/',
         'subdir2/bar.css'
