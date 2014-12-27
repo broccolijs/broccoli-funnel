@@ -158,9 +158,9 @@ module.exports = cssFiles;
 
 ----
 
-`include` *{Array of RegExps}*
+`include` *{Array of RegExps|Glob Strings|Functions}*
 
-One or more regular expressions. Files within the tree whose names match this
+One or more matcher expression (regular expression, glob string, or function). Files within the tree whose names match this
 expression will be copied (with the location inside their parent directories
 preserved) to the `destDir`.
 
@@ -209,9 +209,9 @@ module.exports = todoRelatedFiles;
 
 ----
 
-`exclude` *{Array of RegExps}*
+`exclude` *{Array of RegExps|Glob Strings|Functions}*
 
-One or more regular expressions. Files within the tree whose names match this
+One or more matcher expression (regular expression, glob string, or function). Files within the tree whose names match this
 expression will _not_ be copied to the `destDir` if they otherwise would have
 been.
 
