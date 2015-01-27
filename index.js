@@ -129,9 +129,8 @@ Funnel.prototype.handleReadTree = function(inputTreeRoot) {
 };
 
 Funnel.prototype.cleanup = function() {
-  // must be sync until https://github.com/broccolijs/broccoli/pull/197 lands
   if (fs.existsSync(this._tmpDir)) {
-    return rimraf.sync(this._tmpDir);
+    return rimraf(this._tmpDir);
   }
 };
 
