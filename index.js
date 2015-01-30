@@ -63,15 +63,16 @@ Funnel.prototype.setupDestPaths = function() {
 };
 
 Funnel.prototype._setupFilter = function(type) {
-  var filters = this[type];
-
-  if (!filters) {
+  if (!this[type]) {
     return;
   }
 
-  if (!Array.isArray(filters)) {
-    throw new Error('Invalid ' + type + ' option, it must be an array. You specified `' + typeof filters + '`.');
+  if (!Array.isArray(this[type])) {
+    throw new Error('Invalid ' + type + ' option, it must be an array. You specified `' + typeof this[type] + '`.');
   }
+
+  // Clone the filter array so we are not mutating an external variable
+  var filters = this[type] = this[type].slice(0);
 
   for (var i = 0, l = filters.length; i < l; i++) {
     filters[i] = this._processPattern(filters[i]);

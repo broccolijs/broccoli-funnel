@@ -221,6 +221,12 @@ describe('broccoli-funnel', function(){
         'subdir1/subsubdir2/',
         'subdir1/subsubdir2/some.js'
       ]);
+
+      it('is not mutated', function() {
+        var include = [ '**/*.unknown' ];
+        testFiltering(include, null, null, []);
+        expect(include[0]).to.eql('**/*.unknown');
+      });
     });
 
     describe('exclude filtering', function() {
@@ -252,6 +258,12 @@ describe('broccoli-funnel', function(){
         'subdir2/',
         'subdir2/bar.css'
       ]);
+
+      it('is not mutated', function() {
+        var exclude = [ '**/*' ];
+        testFiltering(null, exclude, null, []);
+        expect(exclude[0]).to.eql('**/*');
+      });
     });
 
     it('combined filtering', function() {
