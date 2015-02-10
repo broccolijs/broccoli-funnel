@@ -118,7 +118,11 @@ Funnel.prototype.handleReadTree = function(inputTreeRoot) {
   }
 
   if (this.shouldLinkRoots()) {
-    this._copy(inputPath, this.destPath);
+    if (fs.existsSync(inputPath)) {
+      this._copy(inputPath, this.destPath);
+    } else if (this.allowEmpty) {
+      mkdirp.sync(this.destPath);
+    }
   } else {
     mkdirp.sync(this._tmpDir);
 
