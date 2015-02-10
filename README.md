@@ -158,6 +158,13 @@ module.exports = cssFiles;
 
 ----
 
+`allowEmpty` *{Boolean}*
+
+When using `srcDir`/`destDir` options only (aka no filtering via `include`/`exclude` options), if the `srcDir` were missing an error would be thrown.
+Setting `allowEmpty` to true, will prevent that error by creating an empty directory at the destination path.
+
+----
+
 `include` *{Array of RegExps|Glob Strings|Functions}*
 
 One or more matcher expression (regular expression, glob string, or function). Files within the tree whose names match this

@@ -133,6 +133,23 @@ describe('broccoli-funnel', function(){
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
         });
     });
+
+    it('does not error with input tree at a missing nested source', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        srcDir: 'subdir3',
+        allowEmpty: true
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function(results) {
+          var expected = [];
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+    });
   });
 
   describe('with filtering options', function() {
