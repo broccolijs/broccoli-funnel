@@ -1,9 +1,12 @@
 'use strict';
 
+var fs = require('fs');
 var path = require('path');
+var RSVP = require('rsvp');
 var expect = require('expect.js');
 var walkSync = require('walk-sync');
 var broccoli = require('broccoli');
+var rimraf = RSVP.denodeify(require('rimraf'));
 
 require('mocha-jshint')();
 
@@ -90,6 +93,26 @@ describe('broccoli-funnel', function(){
   });
 
   describe('without filtering options', function() {
+    it('linking roots without srcDir/destDir, can rebuild without error', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath);
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+        });
+    });
+
     it('simply returns a copy of the input tree', function() {
       var inputPath = path.join(fixturePath, 'dir1');
       var tree = new Funnel(inputPath);
@@ -115,6 +138,39 @@ describe('broccoli-funnel', function(){
           var outputPath = path.join(results.directory, 'some-random');
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+        })
+        .then(function() {
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = path.join(results.directory, 'some-random');
+
+          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+        });
+    });
+
+    it('can properly handle the output path being a broken symlink', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var tree = new Funnel(inputPath, {
+        srcDir: 'subdir1'
+      });
+
+      builder = new broccoli.Builder(tree);
+      return builder.build()
+        .then(function() {
+          return rimraf(tree._tmpDir);
+        })
+        .then(function() {
+          fs.symlinkSync('foo/bar/baz.js', tree._tmpDir);
+        })
+        .then(function() {
+          return builder.build();
+        })
+        .then(function(results) {
+          var restrictedInputPath = path.join(inputPath, 'subdir1');
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
         });
     });
 
@@ -131,6 +187,15 @@ describe('broccoli-funnel', function(){
           var outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
+        })
+        .then(function() {
+          return builder.build();
+        })
+        .then(function(results) {
+          var restrictedInputPath = path.join(inputPath, 'subdir1');
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
         });
     });
 
@@ -141,10 +206,19 @@ describe('broccoli-funnel', function(){
         allowEmpty: true
       });
 
+      var expected = [];
+
       builder = new broccoli.Builder(tree);
       return builder.build()
         .then(function(results) {
-          var expected = [];
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        })
+        .then(function() {
+          return builder.build();
+        })
+        .then(function(results) {
           var outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(expected);
