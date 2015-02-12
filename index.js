@@ -133,9 +133,7 @@ Funnel.prototype.handleReadTree = function(inputTreeRoot) {
 };
 
 Funnel.prototype.cleanup = function() {
-  if (fs.existsSync(this._tmpDir)) {
-    return rimraf(this._tmpDir);
-  }
+  return rimraf(this._tmpDir);
 };
 
 Funnel.prototype.processFilters = function(inputPath) {
