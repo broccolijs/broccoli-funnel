@@ -62,7 +62,7 @@ describe('broccoli-funnel', function(){
               path.join(outputPath, 'foo/subdir1/subsubdir1/foo.png'),
               'subdir1/subsubdir1/foo.png' ],
             [ path.join(fixturePath, 'dir1', 'subdir1/subsubdir2/some.js'),
-              path.join(outputPath, 'foo/subdir1/subsubdir2/some.js'), 
+              path.join(outputPath, 'foo/subdir1/subsubdir2/some.js'),
               'subdir1/subsubdir2/some.js' ]
           ];
 
@@ -158,10 +158,10 @@ describe('broccoli-funnel', function(){
       builder = new broccoli.Builder(tree);
       return builder.build()
         .then(function() {
-          return rimraf(tree._tmpDir);
+          return rimraf(tree.outputPath);
         })
         .then(function() {
-          fs.symlinkSync('foo/bar/baz.js', tree._tmpDir);
+          fs.symlinkSync('foo/bar/baz.js', tree.outputPath);
         })
         .then(function() {
           return builder.build();

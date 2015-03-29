@@ -1,15 +1,12 @@
 'use strict';
 
 var fs = require('fs');
-var RSVP = require('rsvp');
 var path = require('path');
-var rimraf = RSVP.denodeify(require('rimraf'));
 var mkdirp = require('mkdirp');
 var walkSync = require('walk-sync');
 var Minimatch = require('minimatch').Minimatch;
 var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
-var generateRandomString = require('./lib/generate-random-string');
 
 
 function makeDictionary() {
@@ -28,15 +25,13 @@ function Funnel(inputTree, options) {
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
 
-  this._tmpDir = path.resolve(path.join(this.tmpRoot, 'funnel-dest_' + generateRandomString(6) + '.tmp'));
-
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
     var key = keys[i];
     this[key] = options[key];
   }
 
-  this.setupDestPaths();
+  this.destDir = this.destDir || '/';
 
   if (this.files && !Array.isArray(this.files)) {
     throw new Error('Invalid files option, it must be an array.');
@@ -50,17 +45,6 @@ function Funnel(inputTree, options) {
 
 Funnel.__proto__ = CoreObject;
 Funnel.prototype.constructor = Funnel;
-
-Funnel.prototype.tmpRoot = 'tmp';
-
-Funnel.prototype.setupDestPaths = function() {
-  this.destDir = this.destDir || '/';
-  this.destPath = path.join(this._tmpDir, this.destDir);
-
-  if (this.destPath[this.destPath.length -1] === '/') {
-    this.destPath = this.destPath.slice(0, -1);
-  }
-};
 
 Funnel.prototype._setupFilter = function(type) {
   var filters = this[type];
@@ -100,40 +84,27 @@ Funnel.prototype.shouldLinkRoots = function() {
   return !this.files && !this.include && !this.exclude && !this.getDestinationPath;
 };
 
-Funnel.prototype.read = function(readTree) {
-  var inputTree = this.inputTree;
+Funnel.prototype.rebuild = function() {
+  this.destPath = path.join(this.outputPath, this.destDir);
+  if (this.destPath[this.destPath.length -1] === '/') {
+    this.destPath = this.destPath.slice(0, -1);
+  }
 
-  return RSVP.Promise.resolve()
-    .then(this.cleanup.bind(this))
-    .then(function() {
-      return readTree(inputTree);
-    })
-    .then(this.handleReadTree.bind(this));
-};
-
-Funnel.prototype.handleReadTree = function(inputTreeRoot) {
-  var inputPath = inputTreeRoot;
+  var inputPath = this.inputPath;
   if (this.srcDir) {
-    inputPath = path.join(inputTreeRoot, this.srcDir);
+    inputPath = path.join(inputPath, this.srcDir);
   }
 
   if (this.shouldLinkRoots()) {
     if (fs.existsSync(inputPath)) {
+      fs.rmdirSync(this.outputPath);
       this._copy(inputPath, this.destPath);
     } else if (this.allowEmpty) {
       mkdirp.sync(this.destPath);
     }
   } else {
-    mkdirp.sync(this._tmpDir);
-
     this.processFilters(inputPath);
   }
-
-  return this._tmpDir;
-};
-
-Funnel.prototype.cleanup = function() {
-  return rimraf(this._tmpDir);
 };
 
 Funnel.prototype.processFilters = function(inputPath) {
