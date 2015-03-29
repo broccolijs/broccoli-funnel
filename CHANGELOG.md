@@ -1,5 +1,6 @@
 # master
 
+* Make `new` operator optional
 * Use [new `.rebuild` API](https://github.com/broccolijs/broccoli/blob/master/docs/new-rebuild-api.md)
 
 # 0.2.2
