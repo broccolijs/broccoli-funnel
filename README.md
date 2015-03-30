@@ -10,13 +10,13 @@ Inspired by [broccoli-static-compiler](https://github.com/joliss/broccoli-static
 
 ## Documentation
 
-### `Funnel(inputTree, options)`
+### `funnel(inputTree, options)`
 
 `inputTree` *{Single tree}*
 
 A Broccoli tree. A tree in Broccoli can be either a string that references a
 directory in your project or a tree structure returned from running another
-Broccoli filter.
+Broccoli plugin.
 
 If your project has the following file structure:
 
@@ -38,8 +38,8 @@ If your project has the following file structure:
 You can select a subsection of the tree via Funnel:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
-var cssFiles = new Funnel('src/css');
+var funnel = require('broccoli-funnel');
+var cssFiles = funnel('src/css');
 
 /*
   cssFiles is now equivalent to this tree:
@@ -81,7 +81,7 @@ If your project has the following file structure:
 You can select a subsection of the tree via Funnel:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+var funnel = require('broccoli-funnel');
 var mergeTrees = require('broccoli-merge-trees');
 
 // root of our source files
@@ -93,7 +93,7 @@ var projectFiles = 'src';
   ├── reset.css
   └── todos.css
 */
-var cssFiles = new Funnel(projectFiles, {
+var cssFiles = funnel(projectFiles, {
   srcDir: 'css'
 });
 
@@ -103,7 +103,7 @@ var cssFiles = new Funnel(projectFiles, {
   ├── check-mark.png
   └── logo.jpg
 */
-var imageFiles = new Funnel(projectFiles, {
+var imageFiles = funnel(projectFiles, {
   srcDir: 'icons'
 });
 
@@ -139,9 +139,9 @@ If your project has the following file structure:
 You can select a subsection of the tree via Funnel and copy it to a new location:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+var funnel = require('broccoli-funnel');
 
-var cssFiles = new Funnel('src/css', {
+var cssFiles = funnel('src/css', {
   destDir: 'build'
 });
 
@@ -194,11 +194,11 @@ You can select files that match a regular expression copy those subtrees to a
 new location, preserving their location within parent directories:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+var funnel = require('broccoli-funnel');
 
 // finds all files that match /todo/ and moves them
 // the destDir
-var todoRelatedFiles = new Funnel('src', {
+var todoRelatedFiles = funnel('src', {
   include: [new RegExp(/todo/)]
 });
 
@@ -247,11 +247,11 @@ If your project has the following file structure:
 You can select files that match a regular expression exclude them from copying:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+var funnel = require('broccoli-funnel');
 
 // finds all files in 'src' EXCEPT those that match /todo/
 // and adds them to a tree.
-var nobodyLikesTodosAnyway = new Funnel('src', {
+var nobodyLikesTodosAnyway = funnel('src', {
   exclude: [new RegExp(/todo/)]
 });
 
@@ -301,10 +301,10 @@ You can select a specific list of files copy those subtrees to a
 new location, preserving their location within parent directories:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+var funnel = require('broccoli-funnel');
 
 // finds these specific files and moves them to the destDir
-var someFiles = new Funnel('src', {
+var someFiles = funnel('src', {
   files: ['css/reset.css', 'icons/check-mark.png']
 });
 
@@ -337,7 +337,7 @@ In the following example, `getDestinationPath` is used to move `main.js` to
 `ember-metal.js`:
 
 ```javascript
-var tree = new Funnel('packages/ember-metal/lib', {
+var tree = funnel('packages/ember-metal/lib', {
   destDir: 'ember-metal',
 
   getDestinationPath: function(relativePath) {
