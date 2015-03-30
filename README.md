@@ -1,6 +1,6 @@
 # Broccoli Funnel
 
-[![Build Status](https://travis-ci.org/rwjblue/broccoli-funnel.svg?branch=master)](https://travis-ci.org/rwjblue/broccoli-funnel)
+[![Build Status](https://travis-ci.org/broccolijs/broccoli-funnel.svg?branch=master)](https://travis-ci.org/broccolijs/broccoli-funnel)
 
 Broccoli Funnel is a plugin that filters a tree and returns a new tree that
 represents a subset of the files in the original tree. The filters are
