@@ -39,7 +39,7 @@ You can select a subsection of the tree via Funnel:
 
 ```javascript
 var funnel = require('broccoli-funnel');
-var cssFiles = funnel('src/css');
+var cssFiles = new funnel('src/css');
 
 /*
   cssFiles is now equivalent to this tree:
@@ -93,7 +93,7 @@ var projectFiles = 'src';
   ├── reset.css
   └── todos.css
 */
-var cssFiles = funnel(projectFiles, {
+var cssFiles = new funnel(projectFiles, {
   srcDir: 'css'
 });
 
@@ -103,7 +103,7 @@ var cssFiles = funnel(projectFiles, {
   ├── check-mark.png
   └── logo.jpg
 */
-var imageFiles = funnel(projectFiles, {
+var imageFiles = new funnel(projectFiles, {
   srcDir: 'icons'
 });
 
@@ -141,7 +141,7 @@ You can select a subsection of the tree via Funnel and copy it to a new location
 ```javascript
 var funnel = require('broccoli-funnel');
 
-var cssFiles = funnel('src/css', {
+var cssFiles = new funnel('src/css', {
   destDir: 'build'
 });
 
@@ -198,7 +198,7 @@ var funnel = require('broccoli-funnel');
 
 // finds all files that match /todo/ and moves them
 // the destDir
-var todoRelatedFiles = funnel('src', {
+var todoRelatedFiles = new funnel('src', {
   include: [new RegExp(/todo/)]
 });
 
@@ -251,7 +251,7 @@ var funnel = require('broccoli-funnel');
 
 // finds all files in 'src' EXCEPT those that match /todo/
 // and adds them to a tree.
-var nobodyLikesTodosAnyway = funnel('src', {
+var nobodyLikesTodosAnyway = new funnel('src', {
   exclude: [new RegExp(/todo/)]
 });
 
@@ -304,7 +304,7 @@ new location, preserving their location within parent directories:
 var funnel = require('broccoli-funnel');
 
 // finds these specific files and moves them to the destDir
-var someFiles = funnel('src', {
+var someFiles = new funnel('src', {
   files: ['css/reset.css', 'icons/check-mark.png']
 });
 
@@ -337,7 +337,7 @@ In the following example, `getDestinationPath` is used to move `main.js` to
 `ember-metal.js`:
 
 ```javascript
-var tree = funnel('packages/ember-metal/lib', {
+var tree = new funnel('packages/ember-metal/lib', {
   destDir: 'ember-metal',
 
   getDestinationPath: function(relativePath) {
