@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rwjblue/broccoli-funnel.git"
+    "url": "https://github.com/broccolijs/broccoli-funnel.git"
   },
   "scripts": {
     "test": "mocha tests/"
