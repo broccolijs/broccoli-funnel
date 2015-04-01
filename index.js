@@ -7,6 +7,7 @@ var walkSync = require('walk-sync');
 var Minimatch = require('minimatch').Minimatch;
 var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
+var readAPICompat = require('broccoli-read-compat');
 
 
 function makeDictionary() {
@@ -212,5 +213,7 @@ Funnel.prototype._copy = function(sourcePath, destPath) {
 
   symlinkOrCopy.sync(sourcePath, destPath);
 };
+
+readAPICompat.wrapFactory(Funnel);
 
 module.exports = Funnel;
