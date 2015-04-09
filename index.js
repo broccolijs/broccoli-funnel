@@ -110,7 +110,14 @@ Funnel.prototype.rebuild = function() {
 };
 
 Funnel.prototype.processFilters = function(inputPath) {
-  var files = walkSync(inputPath);
+  var files;
+
+  if (this.files && !this.exclude && !this.include) {
+    files = this.files.slice(0); //clone to be compatible with walkSync
+  } else {
+    files = walkSync(inputPath);
+  }
+
   var relativePath, destRelativePath, fullInputPath, fullOutputPath;
 
   for (var i = 0, l = files.length; i < l; i++) {
