@@ -6,8 +6,6 @@ Broccoli Funnel is a plugin that filters a tree and returns a new tree that
 represents a subset of the files in the original tree. The filters are
 expressed as regular expressions.
 
-Inspired by [broccoli-static-compiler](https://github.com/joliss/broccoli-static-compiler).
-
 ## Documentation
 
 ### `funnel(inputTree, options)`
