@@ -5,7 +5,6 @@ var path = require('path');
 var mkdirp = require('mkdirp');
 var walkSync = require('walk-sync');
 var Minimatch = require('minimatch').Minimatch;
-var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
 var readAPICompat = require('broccoli-read-compat');
 
@@ -43,9 +42,6 @@ function Funnel(inputTree, options) {
 
   this._instantiatedStack = (new Error()).stack;
 }
-
-Funnel.__proto__ = CoreObject;
-Funnel.prototype.constructor = Funnel;
 
 Funnel.prototype._setupFilter = function(type) {
   if (!this[type]) {
