@@ -1,5 +1,7 @@
 # master
 
+* Do not use `CoreObject`
+
 # 0.2.3
 
 * Make `new` operator optional
