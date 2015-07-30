@@ -49,20 +49,21 @@ describe('broccoli-funnel', function(){
         destDir: 'foo',
 
         processFile: function(sourcePath, destPath, relativePath) {
-          processFileArguments.push([sourcePath, destPath, relativePath]);
+          var relSourcePath = sourcePath.replace(this.inputPaths[0], '__input_path__');
+          var relDestPath = destPath.replace(this.outputPath, '__output_path__');
+          processFileArguments.push([relSourcePath, relDestPath, relativePath]);
         }
       });
 
       builder = new broccoli.Builder(tree);
       return builder.build()
         .then(function(results) {
-          var outputPath = results.directory;
           var expected = [
-            [ path.join(fixturePath, 'dir1', 'subdir1/subsubdir1/foo.png'),
-              path.join(outputPath, 'foo/subdir1/subsubdir1/foo.png'),
+            [ path.join('__input_path__', 'subdir1/subsubdir1/foo.png'),
+              path.join('__output_path__', 'foo/subdir1/subsubdir1/foo.png'),
               'subdir1/subsubdir1/foo.png' ],
-            [ path.join(fixturePath, 'dir1', 'subdir1/subsubdir2/some.js'),
-              path.join(outputPath, 'foo/subdir1/subsubdir2/some.js'),
+            [ path.join('__input_path__', 'subdir1/subsubdir2/some.js'),
+              path.join('__output_path__', 'foo/subdir1/subsubdir2/some.js'),
               'subdir1/subsubdir2/some.js' ]
           ];
 

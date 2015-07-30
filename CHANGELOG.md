@@ -1,6 +1,7 @@
 # master
 
 * Do not use `CoreObject`
+* Derive from broccoli-plugin base class
 
 # 0.2.3
 

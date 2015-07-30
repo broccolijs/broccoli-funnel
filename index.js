@@ -5,8 +5,8 @@ var path = require('path');
 var mkdirp = require('mkdirp');
 var walkSync = require('walk-sync');
 var Minimatch = require('minimatch').Minimatch;
+var Plugin = require('broccoli-plugin');
 var symlinkOrCopy = require('symlink-or-copy');
-var readAPICompat = require('broccoli-read-compat');
 
 
 function makeDictionary() {
@@ -17,10 +17,12 @@ function makeDictionary() {
   return cache;
 }
 
+Funnel.prototype = Object.create(Plugin.prototype);
+Funnel.prototype.constructor = Funnel;
 function Funnel(inputTree, options) {
   if (!(this instanceof Funnel)) { return new Funnel(inputTree, options); }
 
-  this.inputTree = inputTree;
+  Plugin.call(this, [inputTree]);
 
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
@@ -82,13 +84,13 @@ Funnel.prototype.shouldLinkRoots = function() {
   return !this.files && !this.include && !this.exclude && !this.getDestinationPath;
 };
 
-Funnel.prototype.rebuild = function() {
+Funnel.prototype.build = function() {
   this.destPath = path.join(this.outputPath, this.destDir);
   if (this.destPath[this.destPath.length -1] === '/') {
     this.destPath = this.destPath.slice(0, -1);
   }
 
-  var inputPath = this.inputPath;
+  var inputPath = this.inputPaths[0];
   if (this.srcDir) {
     inputPath = path.join(inputPath, this.srcDir);
   }
@@ -216,7 +218,5 @@ Funnel.prototype._copy = function(sourcePath, destPath) {
 
   symlinkOrCopy.sync(sourcePath, destPath);
 };
-
-readAPICompat.wrapFactory(Funnel);
 
 module.exports = Funnel;
