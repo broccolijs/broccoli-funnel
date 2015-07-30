@@ -25,13 +25,13 @@ describe('broccoli-funnel', function(){
   describe('processFile', function() {
     it('is not called when simply linking roots (aka no include/exclude)', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         processFile: function() {
           throw new Error('should never be called');
         }
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
@@ -44,7 +44,7 @@ describe('broccoli-funnel', function(){
       var processFileArguments = [];
 
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         include: [ /.png$/, /.js$/ ],
         destDir: 'foo',
 
@@ -55,7 +55,7 @@ describe('broccoli-funnel', function(){
         }
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var expected = [
@@ -73,7 +73,7 @@ describe('broccoli-funnel', function(){
 
     it('is responsible for generating files in the destDir', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         include: [ /.png$/, /.js$/ ],
         destDir: 'foo',
 
@@ -82,7 +82,7 @@ describe('broccoli-funnel', function(){
         }
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
@@ -96,9 +96,9 @@ describe('broccoli-funnel', function(){
   describe('without filtering options', function() {
     it('linking roots without srcDir/destDir, can rebuild without error', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath);
+      var node = new Funnel(inputPath);
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
@@ -114,11 +114,11 @@ describe('broccoli-funnel', function(){
         });
     });
 
-    it('simply returns a copy of the input tree', function() {
+    it('simply returns a copy of the input node', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath);
+      var node = new Funnel(inputPath);
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
@@ -127,13 +127,13 @@ describe('broccoli-funnel', function(){
         });
     });
 
-    it('simply returns a copy of the input tree at a nested destination', function() {
+    it('simply returns a copy of the input node at a nested destination', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         destDir: 'some-random'
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var outputPath = path.join(results.directory, 'some-random');
@@ -152,17 +152,17 @@ describe('broccoli-funnel', function(){
 
     it('can properly handle the output path being a broken symlink', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         srcDir: 'subdir1'
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function() {
-          return rimraf(tree.outputPath);
+          return rimraf(node.outputPath);
         })
         .then(function() {
-          fs.symlinkSync('foo/bar/baz.js', tree.outputPath);
+          fs.symlinkSync('foo/bar/baz.js', node.outputPath);
         })
         .then(function() {
           return builder.build();
@@ -175,13 +175,13 @@ describe('broccoli-funnel', function(){
         });
     });
 
-    it('simply returns a copy of the input tree at a nested source', function() {
+    it('simply returns a copy of the input node at a nested source', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         srcDir: 'subdir1'
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var restrictedInputPath = path.join(inputPath, 'subdir1');
@@ -200,16 +200,16 @@ describe('broccoli-funnel', function(){
         });
     });
 
-    it('does not error with input tree at a missing nested source', function() {
+    it('does not error with input node at a missing nested source', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         srcDir: 'subdir3',
         allowEmpty: true
       });
 
       var expected = [];
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
@@ -230,13 +230,13 @@ describe('broccoli-funnel', function(){
   describe('with filtering options', function() {
     function testFiltering(includes, excludes, files, expected) {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         include: includes,
         exclude: excludes,
         files: files
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
       .then(function(results) {
         var outputPath = results.directory;
@@ -260,14 +260,14 @@ describe('broccoli-funnel', function(){
     describe('filtering with `files`', function() {
       it('can take a list of files', function() {
         var inputPath = path.join(fixturePath, 'dir1');
-        var tree = new Funnel(inputPath, {
+        var node = new Funnel(inputPath, {
           files: [
             'subdir1/subsubdir1/foo.png',
             'subdir2/bar.css'
           ]
         });
 
-        builder = new broccoli.Builder(tree);
+        builder = new broccoli.Builder(node);
         return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
@@ -360,12 +360,12 @@ describe('broccoli-funnel', function(){
 
     it('combined filtering', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         exclude: [ /.png$/, /.js$/ ],
         include: [ /.txt$/ ]
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
       .then(function(results) {
         var outputPath = results.directory;
@@ -380,11 +380,11 @@ describe('broccoli-funnel', function(){
 
     it('creates its output directory even if no files are matched', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath, {
+      var node = new Funnel(inputPath, {
         exclude: [ /.*/ ]
       });
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
       .then(function(results) {
         var outputPath = results.directory;
@@ -397,13 +397,13 @@ describe('broccoli-funnel', function(){
   describe('with customized destination paths', function() {
     it('uses custom getDestinationPath function if provided', function() {
       var inputPath = path.join(fixturePath, 'dir1');
-      var tree = new Funnel(inputPath);
+      var node = new Funnel(inputPath);
 
-      tree.getDestinationPath = function(relativePath) {
+      node.getDestinationPath = function(relativePath) {
         return path.join('foo', relativePath);
       };
 
-      builder = new broccoli.Builder(tree);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
@@ -414,74 +414,74 @@ describe('broccoli-funnel', function(){
   });
 
   describe('includeFile', function() {
-    var tree;
+    var node;
 
     beforeEach(function() {
       var inputPath = path.join(fixturePath, 'dir1');
 
-      tree = new Funnel(inputPath);
+      node = new Funnel(inputPath);
     });
 
     it('returns false if the path is included in an exclude filter', function() {
-      tree.exclude = [ /.foo$/, /.bar$/ ];
+      node.exclude = [ /.foo$/, /.bar$/ ];
 
-      expect(tree.includeFile('blah/blah/blah.foo')).to.not.be.ok();
-      expect(tree.includeFile('blah/blah/blah.bar')).to.not.be.ok();
-      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.foo')).to.not.be.ok();
+      expect(node.includeFile('blah/blah/blah.bar')).to.not.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
     });
 
     it('returns true if the path is included in an include filter', function() {
-      tree.include = [ /.foo$/, /.bar$/ ];
+      node.include = [ /.foo$/, /.bar$/ ];
 
-      expect(tree.includeFile('blah/blah/blah.foo')).to.be.ok();
-      expect(tree.includeFile('blah/blah/blah.bar')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.foo')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.bar')).to.be.ok();
     });
 
     it('returns false if the path is not included in an include filter', function() {
-      tree.include = [ /.foo$/, /.bar$/ ];
+      node.include = [ /.foo$/, /.bar$/ ];
 
-      expect(tree.includeFile('blah/blah/blah.baz')).to.not.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.not.be.ok();
     });
 
     it('returns true if no patterns were used', function() {
-      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
     });
 
     it('uses a cache to ensure we do not recalculate the filtering on subsequent attempts', function() {
-      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
 
       // changing the filter mid-run should have no result on
       // previously calculated paths
-      tree.include = [ /.foo$/, /.bar$/ ];
+      node.include = [ /.foo$/, /.bar$/ ];
 
-      expect(tree.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
     });
   });
 
   describe('lookupDestinationPath', function() {
-    var tree;
+    var node;
 
     beforeEach(function() {
       var inputPath = path.join(fixturePath, 'dir1');
 
-      tree = new Funnel(inputPath);
+      node = new Funnel(inputPath);
     });
 
     it('returns the input path if no getDestinationPath method is defined', function() {
       var relativePath = 'foo/bar/baz';
 
-      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(relativePath);
+      expect(node.lookupDestinationPath(relativePath)).to.be.equal(relativePath);
     });
 
     it('returns the output of getDestinationPath method if defined', function() {
       var relativePath = 'foo/bar/baz';
       var expected = 'blah/blah/blah';
 
-      tree.getDestinationPath = function() {
+      node.getDestinationPath = function() {
         return expected;
       };
 
-      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
     });
 
     it('only calls getDestinationPath once and caches result', function() {
@@ -490,18 +490,18 @@ describe('broccoli-funnel', function(){
       var getDestPathValue = expected;
       var getDestPathCalled = 0;
 
-      tree.getDestinationPath = function() {
+      node.getDestinationPath = function() {
         getDestPathCalled++;
 
         return expected;
       };
 
-      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
       expect(getDestPathCalled).to.be.equal(1);
 
       getDestPathValue = 'some/other/thing';
 
-      expect(tree.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
       expect(getDestPathCalled).to.be.equal(1);
     });
   });

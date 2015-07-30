@@ -19,10 +19,10 @@ function makeDictionary() {
 
 Funnel.prototype = Object.create(Plugin.prototype);
 Funnel.prototype.constructor = Funnel;
-function Funnel(inputTree, options) {
-  if (!(this instanceof Funnel)) { return new Funnel(inputTree, options); }
+function Funnel(inputNode, options) {
+  if (!(this instanceof Funnel)) { return new Funnel(inputNode, options); }
 
-  Plugin.call(this, [inputTree]);
+  Plugin.call(this, [inputNode]);
 
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
