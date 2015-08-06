@@ -34,7 +34,7 @@
   "plusplus": false,
   "regexp": false,
   "undef": true,
-  "unused": true,
+  "unused": "vars",
   "sub": true,
   "trailing": true,
   "white": false,

@@ -2,19 +2,20 @@
 
 [![Build Status](https://travis-ci.org/broccolijs/broccoli-funnel.svg?branch=master)](https://travis-ci.org/broccolijs/broccoli-funnel)
 
-Broccoli Funnel is a plugin that filters a tree and returns a new tree that
-represents a subset of the files in the original tree. The filters are
-expressed as regular expressions.
+Given an input node, the Broccoli Funnel plugin returns a new node with only a
+subset of the files from the input node. The files can be moved to different
+paths. You can use regular expressions to select which files to include or
+exclude.
 
 ## Documentation
 
-### `funnel(inputTree, options)`
+### `new Funnel(inputNode, options)`
 
-`inputTree` *{Single tree}*
+`inputNode` *{Single node}*
 
-A Broccoli tree. A tree in Broccoli can be either a string that references a
-directory in your project or a tree structure returned from running another
-Broccoli plugin.
+A Broccoli node (formerly: "tree"). A node in Broccoli can be either a string
+that references a directory in your project or a node object returned from
+running another Broccoli plugin.
 
 If your project has the following file structure:
 
@@ -36,17 +37,17 @@ If your project has the following file structure:
 You can select a subsection of the tree via Funnel:
 
 ```javascript
-var funnel = require('broccoli-funnel');
-var cssFiles = funnel('src/css');
+var Funnel = require('broccoli-funnel');
+var cssFiles = new Funnel('src/css');
 
 /*
-  cssFiles is now equivalent to this tree:
+  cssFiles contains the following files:
 
   ├── reset.css
   └── todos.css
 */
 
-// export a tree for Broccoli to begin processing
+// export the node for Broccoli to begin processing
 module.exports = cssFiles;
 ```
 
@@ -54,10 +55,10 @@ module.exports = cssFiles;
 
 `srcDir` *{String}*
 
-A string representing the portion of the input tree to start the funneling
+A string representing the portion of the input node to start the funneling
 from. This will be the base path for any `include`/`exclude` regexps.
 
-Default: `'.'`, the root path of input tree.
+Default: `'.'`, the root path of the input node.
 
 If your project has the following file structure:
 
@@ -76,37 +77,37 @@ If your project has the following file structure:
         └── todo.js
 ```
 
-You can select a subsection of the tree via Funnel:
+You can select a subsection of the node via Funnel:
 
 ```javascript
-var funnel = require('broccoli-funnel');
-var mergeTrees = require('broccoli-merge-trees');
+var Funnel = require('broccoli-funnel');
+var MergeTrees = require('broccoli-merge-trees');
 
 // root of our source files
 var projectFiles = 'src';
 
-/* get a new tree of only files in the 'src/css' directory
-  cssFiles is equivalent to the tree:
+/* get a new node of only files in the 'src/css' directory
+  cssFiles contains the following files:
 
   ├── reset.css
   └── todos.css
 */
-var cssFiles = funnel(projectFiles, {
+var cssFiles = new Funnel(projectFiles, {
   srcDir: 'css'
 });
 
-/* get a new tree of only files in the 'src/icons' directory
-  imageFiles is equivalent to the tree:
+/* get a new node of only files in the 'src/icons' directory
+  imageFiles contains the following files:
 
   ├── check-mark.png
   └── logo.jpg
 */
-var imageFiles = funnel(projectFiles, {
+var imageFiles = new Funnel(projectFiles, {
   srcDir: 'icons'
 });
 
 
-module.exports = mergeTrees([cssFiles, imageFiles]);
+module.exports = new MergeTrees([cssFiles, imageFiles]);
 ```
 
 ----
@@ -115,7 +116,7 @@ module.exports = mergeTrees([cssFiles, imageFiles]);
 
 A string representing the destination path that filtered files will be copied to.
 
-Default: `'.'`, the root path of input tree.
+Default: `'.'`, the root path of input node.
 
 If your project has the following file structure:
 
@@ -134,17 +135,17 @@ If your project has the following file structure:
         └── todo.js
 ```
 
-You can select a subsection of the tree via Funnel and copy it to a new location:
+You can select a subsection of the directory structure via Funnel and copy it to a new location:
 
 ```javascript
-var funnel = require('broccoli-funnel');
+var Funnel = require('broccoli-funnel');
 
-var cssFiles = funnel('src/css', {
+var cssFiles = new Funnel('src/css', {
   destDir: 'build'
 });
 
 /*
-  cssFiles is equivalent to the tree:
+  cssFiles contains the following files:
 
   build/
   ├── reset.css
@@ -165,7 +166,7 @@ Setting `allowEmpty` to true, will prevent that error by creating an empty direc
 
 `include` *{Array of RegExps|Glob Strings|Functions}*
 
-One or more matcher expression (regular expression, glob string, or function). Files within the tree whose names match this
+One or more matcher expression (regular expression, glob string, or function). Files within the node whose names match this
 expression will be copied (with the location inside their parent directories
 preserved) to the `destDir`.
 
@@ -188,20 +189,20 @@ If your project has the following file structure
         └── todo.js
 ```
 
-You can select files that match a regular expression copy those subtrees to a
+You can select files that match a regular expression copy those subdirectories to a
 new location, preserving their location within parent directories:
 
 ```javascript
-var funnel = require('broccoli-funnel');
+var Funnel = require('broccoli-funnel');
 
 // finds all files that match /todo/ and moves them
 // the destDir
-var todoRelatedFiles = funnel('src', {
+var todoRelatedFiles = new Funnel('src', {
   include: [new RegExp(/todo/)]
 });
 
 /*
-  todoRelatedFiles is equivalent to the tree:
+  todoRelatedFiles contains the following files:
   .
   ├── css
   │   └── todos.css
@@ -216,7 +217,7 @@ module.exports = todoRelatedFiles;
 
 `exclude` *{Array of RegExps|Glob Strings|Functions}*
 
-One or more matcher expression (regular expression, glob string, or function). Files within the tree whose names match this
+One or more matcher expression (regular expression, glob string, or function). Files within the node whose names match this
 expression will _not_ be copied to the `destDir` if they otherwise would have
 been.
 
@@ -245,16 +246,16 @@ If your project has the following file structure:
 You can select files that match a regular expression exclude them from copying:
 
 ```javascript
-var funnel = require('broccoli-funnel');
+var Funnel = require('broccoli-funnel');
 
 // finds all files in 'src' EXCEPT those that match /todo/
-// and adds them to a tree.
-var nobodyLikesTodosAnyway = funnel('src', {
+// and adds them to a node.
+var nobodyLikesTodosAnyway = new Funnel('src', {
   exclude: [new RegExp(/todo/)]
 });
 
 /*
-  nobodyLikesTodosAnyway is equivalent to the tree:
+  nobodyLikesTodosAnyway contains the following files:
   .
   ├── css
   │   └── reset.css
@@ -272,7 +273,7 @@ module.exports = nobodyLikesTodosAnyway;
 
 `files` *{Array of Strings}*
 
-One or more relative file paths. Files within the tree whose relative paths match
+One or more relative file paths. Files within the node whose relative paths match
 will be copied (with the location inside their parent directories
 preserved) to the `destDir`.
 
@@ -295,19 +296,19 @@ If your project has the following file structure
         └── todo.js
 ```
 
-You can select a specific list of files copy those subtrees to a
+You can select a specific list of files copy those subdirectories to a
 new location, preserving their location within parent directories:
 
 ```javascript
-var funnel = require('broccoli-funnel');
+var Funnel = require('broccoli-funnel');
 
 // finds these specific files and moves them to the destDir
-var someFiles = funnel('src', {
+var someFiles = new Funnel('src', {
   files: ['css/reset.css', 'icons/check-mark.png']
 });
 
 /*
-  someFiles is equivalent to the tree:
+  someFiles contains the following files:
   .
   ├── css
   │   └── reset.css
@@ -324,7 +325,7 @@ module.exports = someFiles;
 
 This method will get called for each file, receiving the currently processing
 `relativePath` as its first argument. The value returned from
-`getDestinationPath` will be used as the destination for the new tree. This is
+`getDestinationPath` will be used as the destination for the new node. This is
 a very simple way to move files from one path to another (replacing the need
 for `broccoli-file-mover` for example).
 
@@ -335,7 +336,7 @@ In the following example, `getDestinationPath` is used to move `main.js` to
 `ember-metal.js`:
 
 ```javascript
-var tree = funnel('packages/ember-metal/lib', {
+var node = new Funnel('packages/ember-metal/lib', {
   destDir: 'ember-metal',
 
   getDestinationPath: function(relativePath) {

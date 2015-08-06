@@ -1,7 +1,7 @@
 {
   "name": "broccoli-funnel",
   "version": "0.2.3",
-  "description": "Broccoli plugin that allows you to filter files selected from an input tree down based on regular expressions.",
+  "description": "Broccoli plugin that allows you to filter files selected from an input node down based on regular expressions.",
   "main": "index.js",
   "author": "Robert Jackson",
   "license": "MIT",
@@ -17,8 +17,7 @@
     "javascript"
   ],
   "dependencies": {
-    "broccoli-read-compat": "^0.1.2",
-    "core-object": "0.0.2",
+    "broccoli-plugin": "^1.0.0",
     "minimatch": "^2.0.1",
     "mkdirp": "^0.5.0",
     "symlink-or-copy": "^1.0.0",
