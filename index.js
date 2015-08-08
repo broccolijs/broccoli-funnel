@@ -7,6 +7,7 @@ var walkSync = require('walk-sync-matcher');
 var Minimatch = require('minimatch').Minimatch;
 var Plugin = require('broccoli-plugin');
 var symlinkOrCopy = require('symlink-or-copy');
+var debug = require('debug');
 
 function makeDictionary() {
   var cache = Object.create(null);
@@ -47,6 +48,10 @@ function Funnel(inputNode, options) {
 
   this._instantiatedStack = (new Error()).stack;
 }
+
+Funnel.prototype._debug = function(message) {
+  debug('broccoli-funnel:' + (this.description || this.name || this.constructor.name)).apply(null, arguments);
+};
 
 Funnel.prototype._setupFilter = function(type) {
   if (!this[type]) {
@@ -125,10 +130,12 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   var relativePath, destRelativePath, fullInputPath, fullOutputPath;
 
+  var count = 0;
   for (var i = 0, l = files.length; i < l; i++) {
     relativePath = files[i];
 
     if (this.includeFile(relativePath)) {
+      count++;
       fullInputPath    = path.join(inputPath, relativePath);
       destRelativePath = this.lookupDestinationPath(relativePath);
       fullOutputPath   = path.join(this.destPath, destRelativePath);
@@ -136,6 +143,12 @@ Funnel.prototype.processFilters = function(inputPath) {
       this.processFile(fullInputPath, fullOutputPath, relativePath);
     }
   }
+
+  this._debug('processFilters %o', {
+    filesFound: files.length,
+    filesProcessed: count,
+    inputPath: inputPath
+  });
 };
 
 Funnel.prototype.lookupDestinationPath = function(relativePath) {
