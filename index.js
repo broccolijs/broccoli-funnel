@@ -3,12 +3,11 @@
 var fs = require('fs');
 var path = require('path');
 var mkdirp = require('mkdirp');
-var walkSync = require('walk-sync');
+var walkSync = require('walk-sync-matcher');
 var Minimatch = require('minimatch').Minimatch;
 var CoreObject = require('core-object');
 var symlinkOrCopy = require('symlink-or-copy');
 var readAPICompat = require('broccoli-read-compat');
-
 
 function makeDictionary() {
   var cache = Object.create(null);
@@ -40,6 +39,10 @@ function Funnel(inputTree, options) {
 
   this._setupFilter('include');
   this._setupFilter('exclude');
+
+  this._matchedWalk = this.include && this.include.filter(function(a) {
+    return a instanceof Minimatch;
+  }).length > 0;
 
   this._instantiatedStack = (new Error()).stack;
 }
@@ -115,7 +118,11 @@ Funnel.prototype.processFilters = function(inputPath) {
   if (this.files && !this.exclude && !this.include) {
     files = this.files.slice(0); //clone to be compatible with walkSync
   } else {
-    files = walkSync(inputPath);
+    if (this._matchedWalk) {
+      files = walkSync(inputPath, undefined, this.include);
+    } else {
+      files = walkSync(inputPath);
+    }
   }
 
   var relativePath, destRelativePath, fullInputPath, fullOutputPath;
