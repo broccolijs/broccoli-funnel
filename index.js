@@ -44,7 +44,7 @@ function Funnel(inputNode, options) {
 
   this._matchedWalk = this.include && this.include.filter(function(a) {
     return a instanceof Minimatch;
-  }).length > 0;
+  }).length > this.include.length;
 
   this._instantiatedStack = (new Error()).stack;
 }

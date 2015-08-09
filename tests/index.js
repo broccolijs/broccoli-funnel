@@ -33,11 +33,11 @@ describe('broccoli-funnel', function(){
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+      .then(function(results) {
+        var outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
-        });
+        expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+      });
     });
 
     it('is called for each included file', function() {
@@ -57,18 +57,18 @@ describe('broccoli-funnel', function(){
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var expected = [
-            [ path.join('__input_path__', 'subdir1/subsubdir1/foo.png'),
-              path.join('__output_path__', 'foo/subdir1/subsubdir1/foo.png'),
-              'subdir1/subsubdir1/foo.png' ],
+      .then(function(results) {
+        var expected = [
+          [ path.join('__input_path__', 'subdir1/subsubdir1/foo.png'),
+            path.join('__output_path__', 'foo/subdir1/subsubdir1/foo.png'),
+            'subdir1/subsubdir1/foo.png' ],
             [ path.join('__input_path__', 'subdir1/subsubdir2/some.js'),
               path.join('__output_path__', 'foo/subdir1/subsubdir2/some.js'),
               'subdir1/subsubdir2/some.js' ]
-          ];
+        ];
 
-          expect(processFileArguments).to.eql(expected);
-        });
+        expect(processFileArguments).to.eql(expected);
+      });
     });
 
     it('is responsible for generating files in the destDir', function() {
@@ -84,13 +84,33 @@ describe('broccoli-funnel', function(){
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+      .then(function(results) {
+        var outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql([]);
-        });
+        expect(walkSync(outputPath)).to.eql([]);
+      });
     });
 
+
+    it('works with mixed glob and RegExp includes', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var node = new Funnel(inputPath, {
+        include: [ '**/*.png', /.js$/ ],
+        destDir: 'foo',
+
+        processFile: function() {
+          /* do nothing */
+        }
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+      .then(function(results) {
+        var outputPath = results.directory;
+
+        expect(walkSync(outputPath)).to.eql([]);
+      });
+    });
   });
 
   describe('without filtering options', function() {
