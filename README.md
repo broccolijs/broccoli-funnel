@@ -164,7 +164,7 @@ Setting `allowEmpty` to true, will prevent that error by creating an empty direc
 
 ----
 
-`include` *{Array of RegExps|Glob Strings|Functions}*
+`include` *{Array of GlobStrings|RegExps|Functions}*
 
 One or more matcher expression (regular expression, glob string, or function). Files within the node whose names match this
 expression will be copied (with the location inside their parent directories
@@ -189,7 +189,7 @@ If your project has the following file structure
         └── todo.js
 ```
 
-You can select files that match a regular expression copy those subdirectories to a
+You can select files that match a glob expression and copy those subdirectories to a
 new location, preserving their location within parent directories:
 
 ```javascript
@@ -198,7 +198,7 @@ var Funnel = require('broccoli-funnel');
 // finds all files that match /todo/ and moves them
 // the destDir
 var todoRelatedFiles = new Funnel('src', {
-  include: [new RegExp(/todo/)]
+  include: ['todo/**/*']
 });
 
 /*
@@ -215,7 +215,7 @@ module.exports = todoRelatedFiles;
 
 ----
 
-`exclude` *{Array of RegExps|Glob Strings|Functions}*
+`exclude` *{Array of Glob Strings|Glob Strings|Functions}*
 
 One or more matcher expression (regular expression, glob string, or function). Files within the node whose names match this
 expression will _not_ be copied to the `destDir` if they otherwise would have
@@ -243,7 +243,7 @@ If your project has the following file structure:
         └── todo.js
 ```
 
-You can select files that match a regular expression exclude them from copying:
+You can select files that match a glob expression and exclude them from copying:
 
 ```javascript
 var Funnel = require('broccoli-funnel');
@@ -251,7 +251,7 @@ var Funnel = require('broccoli-funnel');
 // finds all files in 'src' EXCEPT those that match /todo/
 // and adds them to a node.
 var nobodyLikesTodosAnyway = new Funnel('src', {
-  exclude: [new RegExp(/todo/)]
+  exclude: ['todo/**/*']
 });
 
 /*
