@@ -47,6 +47,7 @@ function Funnel(inputNode, options) {
   }).length === this.include.length;
 
   this._instantiatedStack = (new Error()).stack;
+  this._buildStart = undefined;
 }
 
 Funnel.prototype._debug = function(message) {
@@ -93,6 +94,7 @@ Funnel.prototype.shouldLinkRoots = function() {
 };
 
 Funnel.prototype.build = function() {
+  this._buildStart = new Date();
   this.destPath = path.join(this.outputPath, this.destDir);
   if (this.destPath[this.destPath.length -1] === '/') {
     this.destPath = this.destPath.slice(0, -1);
@@ -103,7 +105,9 @@ Funnel.prototype.build = function() {
     inputPath = path.join(inputPath, this.srcDir);
   }
 
+  var linkedRoots = false;
   if (this.shouldLinkRoots()) {
+    linkedRoots = true;
     if (fs.existsSync(inputPath)) {
       fs.rmdirSync(this.outputPath);
       this._copy(inputPath, this.destPath);
@@ -113,6 +117,13 @@ Funnel.prototype.build = function() {
   } else {
     this.processFilters(inputPath);
   }
+
+  this._debug('build, %o', {
+    in: new Date() - this._buildStart + 'ms',
+    linkedRoots: linkedRoots,
+    inputPath: inputPath,
+    destPath: this.destPath
+  });
 };
 
 Funnel.prototype.processFilters = function(inputPath) {
@@ -145,9 +156,11 @@ Funnel.prototype.processFilters = function(inputPath) {
   }
 
   this._debug('processFilters %o', {
+    in: new Date() - this._buildStart + 'ms',
     filesFound: files.length,
     filesProcessed: count,
-    inputPath: inputPath
+    inputPath: inputPath,
+    destPath: this.destPath
   });
 };
 
