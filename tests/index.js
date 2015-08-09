@@ -111,6 +111,19 @@ describe('broccoli-funnel', function(){
         expect(walkSync(outputPath)).to.eql([]);
       });
     });
+
+
+    it('correctly chooses _matchedWalk scenario', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var node;
+      node = new Funnel(inputPath, { include: [ '**/*.png', /.js$/ ] });
+
+      expect(node._matchedWalk).to.eql(false);
+
+      node = new Funnel(inputPath, { include: [ '**/*.png', '**/*.js' ] });
+
+      expect(node._matchedWalk).to.eql(true);
+    });
   });
 
   describe('without filtering options', function() {
