@@ -91,7 +91,6 @@ describe('broccoli-funnel', function(){
       });
     });
 
-
     it('works with mixed glob and RegExp includes', function() {
       var inputPath = path.join(fixturePath, 'dir1');
       var node = new Funnel(inputPath, {
@@ -233,6 +232,20 @@ describe('broccoli-funnel', function(){
         });
     });
 
+    it('matches *.css', function() {
+      var inputPath = path.join(fixturePath, 'dir1/subdir2');
+      var node = new Funnel(inputPath, {
+        include: ['*.css']
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+          expect(walkSync(outputPath)).to.eql(['bar.css']);
+        });
+    });
+
     it('does not error with input node at a missing nested source', function() {
       var inputPath = path.join(fixturePath, 'dir1');
       var node = new Funnel(inputPath, {
@@ -333,7 +346,7 @@ describe('broccoli-funnel', function(){
         });
       }
 
-      testAllIncludeMatchers([ '**/*.png' ], [ /.png$/ ],[ matchPNG ], [
+      testAllIncludeMatchers([ '**/*.png' ], [ /.png$/ ], [ matchPNG ], [
         'subdir1/',
         'subdir1/subsubdir1/',
         'subdir1/subsubdir1/foo.png'
