@@ -10,7 +10,8 @@
     "url": "https://github.com/broccolijs/broccoli-funnel.git"
   },
   "scripts": {
-    "test": "mocha tests/"
+    "test": "mocha tests/",
+    "test:debug": "mocha debug tests/"
   },
   "keywords": [
     "broccoli-plugin",
