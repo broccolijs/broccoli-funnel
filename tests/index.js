@@ -331,6 +331,143 @@ describe('broccoli-funnel', function(){
       });
     });
 
+    describe('filtering with a `files` function', function() {
+      it('can take files as a function', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+        var filesCounter = 0;
+        var filesByCounter = [
+          [
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/bar.css'
+          ],
+          [ 'subdir1/subsubdir1/foo.png' ],
+          [],
+          ['subdir1/subsubdir2/some.js']
+        ];
+
+        var tree = new Funnel(inputPath, {
+          files: function() {
+            return filesByCounter[filesCounter++];
+          }
+        });
+
+        builder = new broccoli.Builder(tree);
+
+        return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/',
+            'subdir2/bar.css'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+
+          // Build again
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+
+          // Build again
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+
+          // Build again
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir2/',
+            'subdir1/subsubdir2/some.js'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+      });
+
+      it('can take files as a function with exclude (includeCache needs to be cleared)', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+        var filesCounter = 0;
+        var filesByCounter = [
+          [],
+          [ 'subdir1/subsubdir1/foo.png' ],
+          [
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/bar.css'
+          ]
+        ];
+
+        var tree = new Funnel(inputPath, {
+          files: function() {
+            return filesByCounter[filesCounter++];
+          }
+        });
+
+        builder = new broccoli.Builder(tree);
+
+        return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+
+          // Build again
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+
+          // Build again
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          var expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/',
+            'subdir2/bar.css'
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
+      });
+    });
+
     describe('include filtering', function() {
       function testAllIncludeMatchers(glob, regexp, func, expected) {
         it('can take a glob string', function() {
