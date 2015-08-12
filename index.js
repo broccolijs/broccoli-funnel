@@ -16,6 +16,21 @@ function makeDictionary() {
   delete cache['_dict'];
   return cache;
 }
+// copied mostly from node-glob cc @isaacs
+function isNotAPattern(pattern) {
+  var set = new Minimatch(pattern).set;
+  if (set.length > 1) {
+    return false;
+  }
+
+  for (var j = 0; j < set[0].length; j++) {
+    if (typeof set[0][j] !== 'string') {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 Funnel.prototype = Object.create(Plugin.prototype);
 Funnel.prototype.constructor = Funnel;
@@ -37,6 +52,14 @@ function Funnel(inputNode, options) {
 
   if (this.files && !Array.isArray(this.files)) {
     throw new Error('Invalid files option, it must be an array.');
+  }
+
+  if (this.files) {
+    if (this.files.filter(isNotAPattern).length !== this.files.length) {
+      console.warn('broccoli-funnel does not support `files:` option with globs, please use `include:` instead');
+      this.include = this.files;
+      this.files = undefined;
+    }
   }
 
   this._setupFilter('include');
