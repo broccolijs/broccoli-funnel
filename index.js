@@ -5,6 +5,7 @@ var path = require('path');
 var mkdirp = require('mkdirp');
 var walkSync = require('walk-sync-matcher');
 var Minimatch = require('minimatch').Minimatch;
+var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
 var symlinkOrCopy = require('symlink-or-copy');
 var debug = require('debug');
@@ -35,8 +36,17 @@ function Funnel(inputNode, options) {
 
   this.destDir = this.destDir || '/';
 
-  if (this.files && !Array.isArray(this.files)) {
-    throw new Error('Invalid files option, it must be an array.');
+  if (this.files && typeof this.files === 'function') {
+    // Save dynamic files func as a different variable and let the rest of the code
+    // still assume that this.files is always an array.
+    this._dynamicFilesFunc = this.files;
+    delete this.files;
+  } else if (this.files && !Array.isArray(this.files)) {
+    throw new Error('Invalid files option, it must be an array or function (that returns an array).');
+  }
+
+  if ((this.files || this._dynamicFilesFunc) && (this.include || this.exclude)) {
+    throw new Error('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
   }
 
   this._setupFilter('include');
@@ -103,6 +113,16 @@ Funnel.prototype.build = function() {
   var inputPath = this.inputPaths[0];
   if (this.srcDir) {
     inputPath = path.join(inputPath, this.srcDir);
+  }
+
+  if (this._dynamicFilesFunc) {
+    this.lastFiles = this.files;
+    this.files = this._dynamicFilesFunc() || [];
+
+    // Blow away the include cache if the list of files is new
+    if (this.lastFiles !== undefined && !arrayEqual(this.lastFiles, this.files)) {
+      this._includeFileCache = makeDictionary();
+    }
   }
 
   var linkedRoots = false;
