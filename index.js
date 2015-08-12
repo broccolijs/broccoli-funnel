@@ -45,6 +45,10 @@ function Funnel(inputNode, options) {
     throw new Error('Invalid files option, it must be an array or function (that returns an array).');
   }
 
+  if ((this.files || this._dynamicFilesFunc) && (this.include || this.exclude)) {
+    throw new Error('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+  }
+
   this._setupFilter('include');
   this._setupFilter('exclude');
 

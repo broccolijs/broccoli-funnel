@@ -331,6 +331,30 @@ describe('broccoli-funnel', function(){
       });
     });
 
+    describe('`files` is incompatible with filters', function() {
+      it('so error if `files` and `include` are set', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+
+        expect(function() {
+          new Funnel(inputPath, {
+            files: ['anything'],
+            include: ['*.txt']
+          });
+        }).to.throwException('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+      });
+
+      it('so error if `files` and `exclude` are set', function() {
+        var inputPath = path.join(fixturePath, 'dir1');
+
+        expect(function() {
+          new Funnel(inputPath, {
+            files: function() { return ['anything']; },
+            exclude: ['*.md']
+          });
+        }).to.throwException('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+      });
+    });
+
     describe('filtering with a `files` function', function() {
       it('can take files as a function', function() {
         var inputPath = path.join(fixturePath, 'dir1');
