@@ -9,6 +9,7 @@ var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
 var symlinkOrCopy = require('symlink-or-copy');
 var debug = require('debug');
+var FSTree = require('fs-tree');
 
 function makeDictionary() {
   var cache = Object.create(null);
@@ -42,6 +43,9 @@ function Funnel(inputNode, options) {
 
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
+  this._fsTree = new FSTree({
+    ignore: ['update'];
+  });
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -182,21 +186,28 @@ Funnel.prototype.processFilters = function(inputPath) {
     }
   }
 
-  var relativePath, destRelativePath, fullInputPath, fullOutputPath;
+  var destRelativePath, fullInputPath, fullOutputPath, filteredFiles;
 
-  var count = 0;
-  for (var i = 0, l = files.length; i < l; i++) {
-    relativePath = files[i];
+  filteredFiles = files.filter(this.includeFile, this);
 
-    if (this.includeFile(relativePath)) {
-      count++;
-      fullInputPath    = path.join(inputPath, relativePath);
-      destRelativePath = this.lookupDestinationPath(relativePath);
-      fullOutputPath   = path.join(this.destPath, destRelativePath);
+  // [
+  //  ["rm", "./lib/foo.js"],
+  //  ["rm", "./lib/foo2.js"],
+  //  ["create", "./lib/qq.js"],
+  //  ["create", "./lib/shazam.js"],
+  // ]
+  var patch = this._fsTree.calculatePatch(filteredFiles);
+  // TODO: do work and then update this._fsTree( files )
 
-      this.processFile(fullInputPath, fullOutputPath, relativePath);
-    }
-  }
+  var count = filteredFiles.length;
+
+  filteredFiles.forEach(function(relativePath) {
+    fullInputPath    = path.join(inputPath, relativePath);
+    destRelativePath = this.lookupDestinationPath(relativePath);
+    fullOutputPath   = path.join(this.destPath, destRelativePath);
+
+    this.processFile(fullInputPath, fullOutputPath, relativePath);
+  }, this);
 
   this._debug('processFilters %o', {
     in: new Date() - this._buildStart + 'ms',

@@ -28,10 +28,11 @@
   },
   "devDependencies": {
     "broccoli": "^0.15.0",
-    "rimraf": "^2.3.2",
-    "rsvp": "^3.0.14",
+    "chai": "^3.2.0",
     "expect.js": "^0.3.1",
     "mocha": "~1.18.2",
-    "mocha-jshint": "0.0.9"
+    "mocha-jshint": "0.0.9",
+    "rimraf": "^2.3.2",
+    "rsvp": "^3.0.14"
   }
 }
