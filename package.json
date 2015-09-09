@@ -21,8 +21,10 @@
     "array-equal": "^1.0.0",
     "broccoli-plugin": "^1.0.0",
     "debug": "^2.2.0",
+    "fast-ordered-set": "^1.0.0",
     "minimatch": "^2.0.1",
     "mkdirp": "^0.5.0",
+    "rimraf": "^2.4.3",
     "symlink-or-copy": "^1.0.0",
     "walk-sync": "^0.2.5"
   },

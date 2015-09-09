@@ -2,8 +2,7 @@
 
 /* global Set:true */
 
-// TODO: move set somewhere
-var Set = require('broccoli-viz/set');
+var Set = require('fast-ordered-set');
 
 module.exports = FSTree;
 
@@ -21,9 +20,21 @@ function FSTree(options) {
   this.files = new Set((options.files || []).slice());
 }
 
-FSTree.prototype.calculatePatch = function (files) {
-  var filesToRemove = this.files.setDiff(files).values;
-  var filesToAdd = new Set(files.slice()).setDiff(this.files.values.slice()).values;
+Object.defineProperty(FSTree.prototype, 'size', {
+  get: function() {
+    return this.files.size;
+  }
+});
+
+FSTree.prototype.forEach = function (fn, context) {
+  this.files.forEach(fn, context);
+};
+
+FSTree.prototype.calculatePatch = function (_files) {
+  var files = _files instanceof this.constructor ? _files.files : new Set(_files);
+
+  var filesToRemove = this.files.subtract(files).values;
+  var filesToAdd = files.subtract(this.files.values.slice()).values;
 
   var removeOps = reduceRemovals(this.files.values, filesToRemove);
   var createOps = filesToAdd.sort().map(function (file) {
@@ -37,19 +48,35 @@ function reduceRemovals(files, filesToRemove) {
   var tree = new Tree(files);
   tree.removeFiles(filesToRemove);
 
-  return tree.postOrderDepthWalk(function(tree, acc) {
+  return tree.postOrderDepthTraversal(function(tree, acc) {
     var childNames = Object.keys(tree.children);
+    var removingChildDir = false;
+
     var removeChildrenOps = childNames.reduce(function (ops, childName) {
       var child = tree.children[childName];
-      if (child === Tree.RMToken) {
+
+      if (child.operation === Tree.RMToken) {
         ops.push(['rm', tree.pathForChild(childName)]);
+
+        if (child.isFile === false ){
+          removingChildDir = true;
+        }
       }
 
       return ops;
     }, []);
 
-    if (removeChildrenOps.length === childNames.length) {
-      return acc.concat([['rm', tree.path]]);
+    var isRoot = tree.path === undefined;
+
+    if (isRoot) {
+      return acc.concat(removeChildrenOps);
+    }  else if (removeChildrenOps.length === childNames.length) {
+      tree.operation = Tree.RMToken;
+      if (removingChildDir) {
+        return acc.concat(removeChildrenOps);
+      } else {
+        return acc;
+      }
     } else {
       return acc.concat(removeChildrenOps);
     }
@@ -58,10 +85,11 @@ function reduceRemovals(files, filesToRemove) {
 
 function Tree(files, path) {
   this.children = { };
-
+  this.operation = null;
+  this.isFile = false;
   this.path = path;
 
-  if (! Array.isArray(files)) {
+  if (!Array.isArray(files)) {
     throw new Error('new Tree must be given a files argument');
   }
 
@@ -80,14 +108,14 @@ Tree.prototype.pathForChild = function (childName) {
   }
 };
 
-Tree.prototype.postOrderDepthWalk = function(fn, acc) {
+Tree.prototype.postOrderDepthTraversal = function(fn, acc) {
   var names= Object.keys(this.children);
   if (names.length === 0) { return acc; }
 
   names.forEach(function(name) {
     var child = this.children[name];
     if (child instanceof Tree) {
-      acc = child.postOrderDepthWalk(fn, acc);
+      acc = child.postOrderDepthTraversal(fn, acc);
     }
   }, this);
 
@@ -100,22 +128,26 @@ Tree.prototype.addFiles = function (files) {
   }).forEach(this.addFile, this);
 };
 
+function File(current) {
+  this.isFile = true;
+  this.name = current;
+  this.operation = undefined;
+}
 Tree.prototype.addFile = function (fileParts) {
   var current = fileParts.shift();
-  var child;
+  var child = this.children[current];
 
   if (fileParts.length === 0) {
-    child = this.children[current];
-    if (child === true) {
+    if (child && child.isFile) {
       throw new Error('Cannot add duplicate file');
     } else if (child instanceof Tree) {
       throw new Error('Cannot overwrite directory with file');
     }
 
     // add a file
-    this.children[current] = true;
+    this.children[current] = new File(current);
   } else {
-    if (this.children[current] === true) {
+    if (child && child.isFile) {
       throw new Error('Cannot add files to files');
     }
 
@@ -134,15 +166,15 @@ Tree.prototype.removeFile = function (fileParts) {
   var child = this.children[current];
 
   if (fileParts.length === 0) {
-    if (! child) {
+    if (!child) {
       throw new Error('Cannot remove nonexistant file');
     }
 
-    this.children[current] = Tree.RMToken;
+    this.children[current].operation = Tree.RMToken;
   } else {
-    if (! child) {
+    if (!child) {
       throw new Error('Cannot remove from nonexistant directory');
-    } else if (child === true) {
+    } else if (child.isFile) {
       throw new Error('Cannot remove directory from file');
     }
 
@@ -151,7 +183,7 @@ Tree.prototype.removeFile = function (fileParts) {
 };
 
 Tree.prototype.findChild = function(childName) {
-  if (! this.children[childName]) {
+  if (!this.children[childName]) {
     this.children[childName] = new Tree([], this.pathForChild(childName));
   }
 

@@ -9,7 +9,8 @@ var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
 var symlinkOrCopy = require('symlink-or-copy');
 var debug = require('debug');
-var FSTree = require('fs-tree');
+var FSTree = require('./fs-tree');
+var rimraf = require('rimraf');
 
 function makeDictionary() {
   var cache = Object.create(null);
@@ -41,11 +42,11 @@ function Funnel(inputNode, options) {
 
   Plugin.call(this, [inputNode]);
 
+  this._persistentOutput = true;
+
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
-  this._fsTree = new FSTree({
-    ignore: ['update'];
-  });
+  this._fsTree = new FSTree();
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -54,6 +55,7 @@ function Funnel(inputNode, options) {
   }
 
   this.destDir = this.destDir || '/';
+  this.count = 0;
 
   if (this.files && typeof this.files === 'function') {
     // Save dynamic files func as a different variable and let the rest of the code
@@ -156,7 +158,7 @@ Funnel.prototype.build = function() {
   if (this.shouldLinkRoots()) {
     linkedRoots = true;
     if (fs.existsSync(inputPath)) {
-      fs.rmdirSync(this.outputPath);
+      rimraf.sync(this.outputPath);
       this._copy(inputPath, this.destPath);
     } else if (this.allowEmpty) {
       mkdirp.sync(this.destPath);
@@ -186,9 +188,11 @@ Funnel.prototype.processFilters = function(inputPath) {
     }
   }
 
-  var destRelativePath, fullInputPath, fullOutputPath, filteredFiles;
+  var destRelativePath, fullInputPath, fullOutputPath;
 
-  filteredFiles = files.filter(this.includeFile, this);
+  var nextTree = new FSTree({
+    files: files.filter(this.includeFile, this)
+  });
 
   // [
   //  ["rm", "./lib/foo.js"],
@@ -196,18 +200,38 @@ Funnel.prototype.processFilters = function(inputPath) {
   //  ["create", "./lib/qq.js"],
   //  ["create", "./lib/shazam.js"],
   // ]
-  var patch = this._fsTree.calculatePatch(filteredFiles);
-  // TODO: do work and then update this._fsTree( files )
+  var patch = this._fsTree.calculatePatch(nextTree);
+  this._fsTree = nextTree;
+  var removes = patch.filter(function(entry) { return entry[0] === 'rm'; }).map(byPath);
+  var adds    = patch.filter(function(entry) { return entry[0] === 'create'; }).map(byPath);
 
-  var count = filteredFiles.length;
+  function byPath(operation) {
+    return operation[1];
+  }
 
-  filteredFiles.forEach(function(relativePath) {
+
+  function prependPath(outputPath) {
+    return function(path) {
+      return outputPath + '/' + path;
+    };
+  }
+
+  removes.map(prependPath(this.outputPath)).forEach(function(path) {
+    rimraf.sync(path);
+  });
+
+  adds.map(function(relativePath) {
     fullInputPath    = path.join(inputPath, relativePath);
     destRelativePath = this.lookupDestinationPath(relativePath);
     fullOutputPath   = path.join(this.destPath, destRelativePath);
 
     this.processFile(fullInputPath, fullOutputPath, relativePath);
   }, this);
+
+
+  // TODO: do work and then update this._fsTree( files )
+
+  var count = nextTree.size;
 
   this._debug('processFilters %o', {
     in: new Date() - this._buildStart + 'ms',

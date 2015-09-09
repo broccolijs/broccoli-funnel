@@ -76,8 +76,8 @@ describe('FSTree', function() {
           expect(fsTree.calculatePatch([
             'bar/two.js'
           ])).to.deep.equal([
-            ['rm', 'foo'],
             ['rm', 'bar/one.js'],
+            ['rm', 'foo']
           ]);
         });
       });
@@ -90,6 +90,27 @@ describe('FSTree', function() {
             ['rm', 'foo'],
             ['rm', 'bar'],
             ['create', 'bar/three.js'],
+          ]);
+        });
+      });
+    });
+
+    context('from a deep non-empty tree', function() {
+      beforeEach( function() {
+        fsTree = new FSTree({
+          files: [
+            'bar/quz/baz.js',
+            'foo.js',
+          ],
+        });
+      });
+
+      context('to an empty tree', function() {
+        it('returns n rm operations', function() {
+          expect(fsTree.calculatePatch([])).to.deep.equal([
+            ['rm', 'bar/quz'],
+            ['rm', 'bar'],
+            ['rm', 'foo.js'],
           ]);
         });
       });
