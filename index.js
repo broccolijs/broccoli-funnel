@@ -188,48 +188,50 @@ Funnel.prototype.processFilters = function(inputPath) {
     }
   }
 
-  var destRelativePath, fullInputPath, fullOutputPath;
-
+  var outputToInput = {};
   var nextTree = new FSTree({
-    files: files.filter(this.includeFile, this)
+    files: files.filter(this.includeFile, this).map(function(relativePath) {
+      var output = this.lookupDestinationPath(path.join(this.destDir, relativePath));
+      outputToInput[output] = relativePath;
+      return output;
+    }, this)
   });
 
-  // [
-  //  ["rm", "./lib/foo.js"],
-  //  ["rm", "./lib/foo2.js"],
-  //  ["create", "./lib/qq.js"],
-  //  ["create", "./lib/shazam.js"],
-  // ]
   var patch = this._fsTree.calculatePatch(nextTree);
+
   this._fsTree = nextTree;
-  var removes = patch.filter(function(entry) { return entry[0] === 'rm'; }).map(byPath);
-  var adds    = patch.filter(function(entry) { return entry[0] === 'create'; }).map(byPath);
 
-  function byPath(operation) {
-    return operation[1];
-  }
+  patch.forEach(function(entry) {
+    var operation = entry[0];
+    var outputRelative = entry[1];
 
+    if (!outputRelative) {
+      // broccoli itself maintains the roots, we can skip any operation on them
+      return;
+    }
 
-  function prependPath(outputPath) {
-    return function(path) {
-      return outputPath + '/' + path;
-    };
-  }
+    var outputPath = this.outputPath + '/' + outputRelative;
 
-  removes.map(prependPath(this.outputPath)).forEach(function(path) {
-    rimraf.sync(path);
-  });
-
-  adds.map(function(relativePath) {
-    fullInputPath    = path.join(inputPath, relativePath);
-    destRelativePath = this.lookupDestinationPath(relativePath);
-    fullOutputPath   = path.join(this.destPath, destRelativePath);
-
-    this.processFile(fullInputPath, fullOutputPath, relativePath);
+    switch (operation) {
+      case 'unlink' :
+        fs.unlinkSync(outputPath);
+        break;
+      case 'rmdir'  :
+        fs.rmdirSync(outputPath);
+        break;
+      case 'mkdir'  :
+        fs.mkdirSync(outputPath);
+        break;
+      case 'create' :
+        var relativePath = outputToInput[outputRelative];
+        if (relativePath === undefined) {
+          relativePath = outputToInput['/' + outputRelative];
+        }
+        this.processFile(inputPath + '/' + relativePath, outputPath, relativePath);
+        break;
+      default: throw new Error('Unknown operation: ' + operation);
+    }
   }, this);
-
-
-  // TODO: do work and then update this._fsTree( files )
 
   var count = nextTree.size;
 
@@ -237,6 +239,7 @@ Funnel.prototype.processFilters = function(inputPath) {
     in: new Date() - this._buildStart + 'ms',
     filesFound: files.length,
     filesProcessed: count,
+    operations: patch.length,
     inputPath: inputPath,
     destPath: this.destPath
   });
@@ -322,12 +325,16 @@ Funnel.prototype.processFile = function(sourcePath, destPath /*, relativePath */
 };
 
 Funnel.prototype._copy = function(sourcePath, destPath) {
-  var destDir  = path.dirname(destPath);
-  if (!fs.existsSync(destDir)) {
-    mkdirp.sync(destDir);
-  }
+  var destDir = path.dirname(destPath);
 
-  symlinkOrCopy.sync(sourcePath, destPath);
+  try {
+    symlinkOrCopy.sync(sourcePath, destPath);
+  } catch(e) {
+    if (!fs.existsSync(destDir)) {
+      mkdirp.sync(destDir);
+    }
+    symlinkOrCopy.sync(sourcePath, destPath);
+  }
 };
 
 module.exports = Funnel;

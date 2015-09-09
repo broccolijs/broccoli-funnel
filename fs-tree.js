@@ -31,62 +31,86 @@ FSTree.prototype.forEach = function (fn, context) {
 };
 
 FSTree.prototype.calculatePatch = function (_files) {
+  var tree = new Tree(this.files.values);
+
   var files = _files instanceof this.constructor ? _files.files : new Set(_files);
 
   var filesToRemove = this.files.subtract(files).values;
   var filesToAdd = files.subtract(this.files.values.slice()).values;
 
-  var removeOps = reduceRemovals(this.files.values, filesToRemove);
-  var createOps = filesToAdd.sort().map(function (file) {
-    return ['create', file];
-  });
+  // TODO: removeFiles should be combined with the postOrderDepthReducer and return removeOps
+  tree.removeFiles(filesToRemove);
+
+  var removeOps = tree.postOrderDepthReducer(reduceRemovals, []);
+
+  // TODO: addFiles should be combined with th  preOrderDepthReducer and return removeOps
+  tree.addFiles(filesToAdd);
+
+  var createOps = tree.preOrderDepthReducer(reduceAdditions, []);
 
   return removeOps.concat(createOps);
 };
 
-function reduceRemovals(files, filesToRemove) {
-  var tree = new Tree(files);
-  tree.removeFiles(filesToRemove);
+function reduceAdditions(tree, acc) {
+  var childNames = Object.keys(tree.children);
 
-  return tree.postOrderDepthTraversal(function(tree, acc) {
-    var childNames = Object.keys(tree.children);
-    var removingChildDir = false;
-
-    var removeChildrenOps = childNames.reduce(function (ops, childName) {
-      var child = tree.children[childName];
-
-      if (child.operation === Tree.RMToken) {
-        ops.push(['rm', tree.pathForChild(childName)]);
-
-        if (child.isFile === false ){
-          removingChildDir = true;
-        }
-      }
-
-      return ops;
-    }, []);
-
-    var isRoot = tree.path === undefined;
-
-    if (isRoot) {
-      return acc.concat(removeChildrenOps);
-    }  else if (removeChildrenOps.length === childNames.length) {
-      tree.operation = Tree.RMToken;
-      if (removingChildDir) {
-        return acc.concat(removeChildrenOps);
-      } else {
-        return acc;
-      }
-    } else {
-      return acc.concat(removeChildrenOps);
+  var createdChildren = childNames.reduce(function (ops, childName) {
+    var child = tree.children[childName];
+    if (child.isNew) {
+      var operation = child.isFile ? 'create' : 'mkdir';
+      child.isNew = false;
+      ops.push([
+        operation,
+        tree.pathForChild(childName)
+      ]);
     }
+
+    return ops;
   }, []);
+
+  return acc.concat(createdChildren);
 }
 
-function Tree(files, path) {
+function reduceRemovals(tree, acc) {
+  var childNames = Object.keys(tree.children);
+  var removingChildDir = false;
+
+  var removeChildrenOps = childNames.reduce(function (ops, childName) {
+    var child = tree.children[childName];
+
+    if (child.operation === Tree.RMToken) {
+      var operation = child.isFile ? 'unlink' : 'rmdir';
+      ops.push([
+        operation,
+        tree.pathForChild(childName)
+      ]);
+
+      if (child.isFile === false ){
+        removingChildDir = true;
+      }
+      delete tree.children[childName];
+    }
+
+    return ops;
+  }, []);
+
+  var isRoot = tree.path === undefined;
+
+  if (isRoot) {
+    return acc.concat(removeChildrenOps);
+  }  else if (removeChildrenOps.length === childNames.length) {
+    tree.operation = Tree.RMToken;
+    return acc.concat(removeChildrenOps);
+  } else {
+    return acc.concat(removeChildrenOps);
+  }
+}
+
+function Tree(files, path, isNew) {
   this.children = { };
   this.operation = null;
   this.isFile = false;
+  this.isNew = isNew === true;
   this.path = path;
 
   if (!Array.isArray(files)) {
@@ -94,11 +118,12 @@ function Tree(files, path) {
   }
 
   if (files.length > 0) {
-    this.addFiles(files);
+    this.addFiles(files, this.isNew);
   }
 }
 
 Tree.RMToken = function RMToken() { };
+Tree.CreateToken = function CreateToken() { };
 
 Tree.prototype.pathForChild = function (childName) {
   if (this.path) {
@@ -108,34 +133,58 @@ Tree.prototype.pathForChild = function (childName) {
   }
 };
 
-Tree.prototype.postOrderDepthTraversal = function(fn, acc) {
-  var names= Object.keys(this.children);
+Tree.prototype.preOrderDepthReducer = function(fn, acc) {
+  var names = Object.keys(this.children);
+  if (names.length === 0) { return acc; }
+
+  var result = fn(this, acc);
+  var tree = this;
+
+  return names.reduce(function(acc, name) {
+    var child = tree.children[name];
+    if (child instanceof Tree) {
+      return child.preOrderDepthReducer(fn, acc);
+    } else {
+      return acc;
+    }
+  }, result);
+};
+
+Tree.prototype.postOrderDepthReducer = function(fn, acc) {
+  var names = Object.keys(this.children);
   if (names.length === 0) { return acc; }
 
   names.forEach(function(name) {
     var child = this.children[name];
     if (child instanceof Tree) {
-      acc = child.postOrderDepthTraversal(fn, acc);
+      acc = child.postOrderDepthReducer(fn, acc);
     }
   }, this);
 
   return fn(this, acc);
 };
 
-Tree.prototype.addFiles = function (files) {
+Tree.prototype.addFiles = function (files, _isNew) {
+  var isNew = arguments.length > 1 ? arguments[1] : true;
+
   files.map(function (file) {
     return file.split('/');
-  }).forEach(this.addFile, this);
+  }).forEach(function(file) {
+    this.addFile(file, isNew);
+  }, this);
 };
 
-function File(current) {
+function File(current, isNew) {
   this.isFile = true;
+  this.isNew = isNew;
   this.name = current;
   this.operation = undefined;
 }
-Tree.prototype.addFile = function (fileParts) {
+
+Tree.prototype.addFile = function (fileParts, _isNew) {
   var current = fileParts.shift();
   var child = this.children[current];
+  var isNew = arguments.length > 1 ? arguments[1] : true;
 
   if (fileParts.length === 0) {
     if (child && child.isFile) {
@@ -145,13 +194,20 @@ Tree.prototype.addFile = function (fileParts) {
     }
 
     // add a file
-    this.children[current] = new File(current);
+    this.children[current] = new File(current, isNew);
   } else {
     if (child && child.isFile) {
       throw new Error('Cannot add files to files');
     }
 
-    this.findChild(current).addFile(fileParts);
+    var tree = this.children[current];
+    if (!tree) {
+      this.children[current] = new Tree([
+        fileParts.join('/')
+      ], this.pathForChild(current), isNew);
+    } else {
+      tree.addFile(fileParts, isNew);
+    }
   }
 };
 
@@ -180,12 +236,4 @@ Tree.prototype.removeFile = function (fileParts) {
 
     child.removeFile(fileParts);
   }
-};
-
-Tree.prototype.findChild = function(childName) {
-  if (!this.children[childName]) {
-    this.children[childName] = new Tree([], this.pathForChild(childName));
-  }
-
-  return this.children[childName];
 };
