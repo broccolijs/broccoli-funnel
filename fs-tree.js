@@ -40,12 +40,10 @@ FSTree.prototype.calculatePatch = function (_files) {
 
   // TODO: removeFiles should be combined with the postOrderDepthReducer and return removeOps
   tree.removeFiles(filesToRemove);
-
-  var removeOps = tree.postOrderDepthReducer(reduceRemovals, []);
-
   // TODO: addFiles should be combined with th  preOrderDepthReducer and return removeOps
   tree.addFiles(filesToAdd);
 
+  var removeOps = tree.postOrderDepthReducer(reduceRemovals, []);
   var createOps = tree.preOrderDepthReducer(reduceAdditions, []);
 
   return removeOps.concat(createOps);

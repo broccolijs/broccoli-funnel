@@ -93,8 +93,6 @@ describe('FSTree', function() {
             ['unlink', 'bar/one.js'],
             ['unlink', 'bar/two.js'],
             ['rmdir', 'foo'],
-            ['rmdir', 'bar'],
-            ['mkdir', 'bar'],
             ['create', 'bar/three.js'],
           ]);
         });
