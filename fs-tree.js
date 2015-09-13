@@ -6,14 +6,6 @@ var Set = require('fast-ordered-set');
 
 module.exports = FSTree;
 
-//can report
-//  rm
-//  update
-//  create
-
-// can disable
-//  update
-
 function FSTree(options) {
   options = options || {};
 
@@ -43,6 +35,7 @@ FSTree.prototype.calculatePatch = function (_files) {
   // TODO: addFiles should be combined with th  preOrderDepthReducer and return removeOps
   tree.addFiles(filesToAdd);
 
+  // TODO: single reducer tree.reduce(reduceAdditions /* pre */, reduceRemovals /* post */, []);
   var removeOps = tree.postOrderDepthReducer(reduceRemovals, []);
   var createOps = tree.preOrderDepthReducer(reduceAdditions, []);
 
