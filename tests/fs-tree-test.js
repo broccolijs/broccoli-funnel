@@ -93,6 +93,15 @@ describe('FSTree', function() {
             ['unlink', 'bar/one.js'],
             ['unlink', 'bar/two.js'],
             ['rmdir', 'foo'],
+
+            // TODO: we could detect this NOOP [[rmdir bar] => [mkdir bar]] , but leaving it made File ->
+            // Folder & Folder -> File transitions easiest. Maybe some future
+            // work can explore, but the overhead today appears to be
+            // neglibable
+
+            ['rmdir', 'bar'],
+            ['mkdir', 'bar'],
+
             ['create', 'bar/three.js'],
           ]);
         });
