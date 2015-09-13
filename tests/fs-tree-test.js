@@ -163,5 +163,45 @@ describe('FSTree', function() {
         });
       });
     });
+
+    context('folder => file', function() {
+      beforeEach( function() {
+        fsTree = new FSTree({
+          files: [
+            'subdir1/foo'
+          ],
+        });
+      });
+
+      it('it unlinks the file, and rmdir the folder and then creates the file', function() {
+        expect(fsTree.calculatePatch([
+          'subdir1'
+        ])).to.deep.equal([
+          ['unlink', 'subdir1/foo'],
+          ['rmdir', 'subdir1'],
+          ['create', 'subdir1']
+        ]);
+      });
+    });
+
+    context('file => folder', function() {
+      beforeEach( function() {
+        fsTree = new FSTree({
+          files: [
+            'subdir1'
+          ],
+        });
+      });
+
+      it('it unlinks the file, and makes the folder and then creates the file', function() {
+        expect(fsTree.calculatePatch([
+          'subdir1/foo'
+        ])).to.deep.equal([
+          ['unlink', 'subdir1'],
+          ['mkdir', 'subdir1'],
+          ['create', 'subdir1/foo']
+        ]);
+      });
+    });
   });
 });
