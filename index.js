@@ -201,6 +201,8 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   this._fsTree = nextTree;
 
+  this._debug('patch: %o', patch);
+
   patch.forEach(function(entry) {
     var operation = entry[0];
     var outputRelative = entry[1];
