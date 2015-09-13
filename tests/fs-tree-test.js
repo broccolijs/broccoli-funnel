@@ -142,7 +142,7 @@ describe('FSTree', function() {
       });
     });
 
-    context('asdf', function() {
+    context('another nested scenario', function() {
       beforeEach( function() {
         fsTree = new FSTree({
           files: [
