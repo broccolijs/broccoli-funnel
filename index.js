@@ -203,37 +203,12 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   this._debug('patch: %o', patch);
 
+  var processFile = this.processFile.bind(this);
+  var outputPath = this.outputPath;
+
   patch.forEach(function(entry) {
-    var operation = entry[0];
-    var outputRelative = entry[1];
-
-    if (!outputRelative) {
-      // broccoli itself maintains the roots, we can skip any operation on them
-      return;
-    }
-
-    var outputPath = this.outputPath + '/' + outputRelative;
-
-    switch (operation) {
-      case 'unlink' :
-        fs.unlinkSync(outputPath);
-        break;
-      case 'rmdir'  :
-        fs.rmdirSync(outputPath);
-        break;
-      case 'mkdir'  :
-        fs.mkdirSync(outputPath);
-        break;
-      case 'create' :
-        var relativePath = outputToInput[outputRelative];
-        if (relativePath === undefined) {
-          relativePath = outputToInput['/' + outputRelative];
-        }
-        this.processFile(inputPath + '/' + relativePath, outputPath, relativePath);
-        break;
-      default: throw new Error('Unknown operation: ' + operation);
-    }
-  }, this);
+    applyPatch(entry, outputToInput, inputPath, outputPath, processFile);
+  });
 
   var count = nextTree.size;
 
@@ -246,6 +221,38 @@ Funnel.prototype.processFilters = function(inputPath) {
     destPath: this.destPath
   });
 };
+
+function applyPatch(entry, outputToInput, inputPath, _outputPath, processFile) {
+  var operation = entry[0];
+  var outputRelative = entry[1];
+
+  if (!outputRelative) {
+    // broccoli itself maintains the roots, we can skip any operation on them
+    return;
+  }
+
+  var outputPath = _outputPath + '/' + outputRelative;
+
+  switch (operation) {
+    case 'unlink' :
+      fs.unlinkSync(outputPath);
+    break;
+    case 'rmdir'  :
+      fs.rmdirSync(outputPath);
+    break;
+    case 'mkdir'  :
+      fs.mkdirSync(outputPath);
+    break;
+    case 'create' :
+      var relativePath = outputToInput[outputRelative];
+    if (relativePath === undefined) {
+      relativePath = outputToInput['/' + outputRelative];
+    }
+    processFile(inputPath + '/' + relativePath, outputPath, relativePath);
+    break;
+    default: throw new Error('Unknown operation: ' + operation);
+  }
+}
 
 Funnel.prototype.lookupDestinationPath = function(relativePath) {
   if (this._destinationPathCache[relativePath] !== undefined) {
