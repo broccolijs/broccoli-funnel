@@ -63,7 +63,6 @@ function reduceAdditions(tree, acc) {
 
 function reduceRemovals(tree, acc) {
   var childNames = Object.keys(tree.children);
-  var removingChildDir = false;
 
   var removeChildrenOps = childNames.reduce(function (ops, childName) {
     var child = tree.children[childName];
@@ -75,9 +74,6 @@ function reduceRemovals(tree, acc) {
         tree.pathForChild(childName)
       ]);
 
-      if (child.isFile === false ){
-        removingChildDir = true;
-      }
       delete tree.children[childName];
     }
 
