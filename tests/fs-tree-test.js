@@ -58,6 +58,27 @@ describe('FSTree', function() {
       });
     });
 
+    context('\w updates', function() {
+      beforeEach( function() {
+        fsTree = new FSTree({
+          files: [
+            'bar/baz.js',
+            'foo.js',
+          ],
+        });
+      });
+
+      it('returns n rm operations', function() {
+        expect(fsTree.calculatePatch([
+          'bar/baz.js',
+          'foo.js'
+        ])).to.deep.equal([
+          // when we work with entries, will potentially return updates
+        ]);
+      });
+    });
+
+
     context('from a non-empty tree', function() {
       beforeEach( function() {
         fsTree = new FSTree({
@@ -213,35 +234,28 @@ describe('FSTree', function() {
       });
     });
 
+    // context('only folders', function() {
+    //   beforeEach( function() {
+    //     fsTree = new FSTree({
+    //       files: [
+    //         'dir/',
+    //         'dir2/subdir1/',
+    //         'dir3/subdir1/'
+    //       ]
+    //     });
+    //   });
 
-    context('only folders', function() {
-      beforeEach( function() {
-        fsTree = new FSTree({
-          files: [
-            'dir/',
-            'dir2/subdir1/',
-            'dir3/subdir1/'
-          ]
-        });
-      });
-
-      it('it unlinks the file, and makes the folder and then creates the file', function() {
-        console.log(fsTree.calculatePatch([
-          'dir2/subdir1/',
-          'dir3/',
-          'dir4/',
-        ]));
-
-        expect(fsTree.calculatePatch([
-          'dir2/subdir1/',
-          'dir3/',
-          'dir4/',
-        ])).to.deep.equal([
-          ['rmdir', 'dir1'],
-          ['rmdir', 'dir3/subdir1'],
-          ['mkdir', 'dir4']
-        ]);
-      });
-    });
+    //   it('it unlinks the file, and makes the folder and then creates the file', function() {
+    //     expect(fsTree.calculatePatch([
+    //       'dir2/subdir1/',
+    //       'dir3/',
+    //       'dir4/',
+    //     ])).to.deep.equal([
+    //       ['rmdir', 'dir1'],
+    //       ['rmdir', 'dir3/subdir1'],
+    //       ['mkdir', 'dir4']
+    //     ]);
+    //   });
+    // });
   });
 });

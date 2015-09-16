@@ -23,6 +23,9 @@ FSTree.prototype.forEach = function (fn, context) {
 };
 
 FSTree.prototype.calculatePatch = function (_files) {
+  // TODO: algorithimic complexity here isn't ideal. Future work can reduce
+  // that cost. Today, the FS IO operations outweigh the cost, even with a
+  // naive implementation
   var tree = new Tree(this.files.values);
 
   var files = _files instanceof this.constructor ? _files.files : new Set(_files);
@@ -38,8 +41,39 @@ FSTree.prototype.calculatePatch = function (_files) {
   tree.addFiles(filesToAdd);
   var createOps = tree.preOrderDepthReducer(reduceAdditions, []);
 
-  return removeOps.concat(createOps);
+  var changes = findChanges(this.files, files).map(function(change) {
+    return ['change', change];
+  });
+
+  return removeOps.concat(createOps).concat(changes);
 };
+
+function findChanges(previousFiles, nextFiles) {
+  var a = previousFiles.intersection(nextFiles).values;
+  var b = nextFiles.intersection(previousFiles).values;
+
+  if (a.length !== b.length) {
+    throw new Error('EWUT');
+  }
+
+  var changes = [];
+  for (var i = 0; i < a.length; i++) {
+    // TODO: just to ensure expectations, but this will change when we
+    // introduce complex types
+    if (a[i] !== b[i]) {
+      throw new Error('EWUT');
+    }
+    if (needsUpdate(a[i], b[i])) {
+      changes.push(b);
+    }
+  }
+
+  return changes;
+}
+
+function needsUpdate(before, after) {
+  return false;
+}
 
 function reduceAdditions(tree, acc) {
   var childNames = Object.keys(tree.children);
