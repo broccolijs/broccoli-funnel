@@ -28,7 +28,7 @@ FSTree.prototype.calculatePatch = function (_files) {
   var files = _files instanceof this.constructor ? _files.files : new Set(_files);
 
   var filesToRemove = this.files.subtract(files).values;
-  var filesToAdd = files.subtract(this.files.values.slice()).values;
+  var filesToAdd = files.subtract(this.files).values;
 
   // TODO: removeFiles should be combined with the postOrderDepthReducer and return removeOps
   tree.removeFiles(filesToRemove);
