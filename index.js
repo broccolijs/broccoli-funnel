@@ -9,7 +9,7 @@ var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
 var symlinkOrCopy = require('symlink-or-copy');
 var debug = require('debug');
-var FSTree = require('./fs-tree');
+var FSTree = require('./lib/fs-tree');
 var rimraf = require('rimraf');
 
 function makeDictionary() {

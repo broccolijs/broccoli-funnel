@@ -1,8 +1,8 @@
 'use strict';
 
 var expect = require('chai').expect;
-var FSTree = require('../fs-tree');
-var Entries = require('../fs-tree').Entries;
+var FSTree = require('../lib/fs-tree');
+var Entries = require('../lib/fs-tree/entries');
 
 var context = describe;
 var fsTree;
@@ -12,10 +12,10 @@ describe('FSTree', function() {
     expect(new FSTree()).to.be.an.instanceOf(FSTree);
   });
 
-  describe.only('Entries', function() {
+  describe('Entries', function() {
     var entries;
     beforeEach(function() {
-      entries = Entries([
+      entries = new Entries([
         { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
         { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 }
       ]);
@@ -57,21 +57,19 @@ describe('FSTree', function() {
         ]);
       });
 
-      it('should throw if less files are passed', function() {
-        expect(function() {
-          entries.add([
-            { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 }
-          ]);
-        }).to.throw('[Removals Encountered]: The length of removals was greater than the previous entries.');
+      it('should return an empty array if there is a mismatch', function() {
+        var result = entries.add([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 }
+        ]);
+        expect(result).to.deep.equal([]);
       });
 
-      it('should throw if the amount of files is the same', function() {
-        expect(function() {
-          entries.add([
-            { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
-            { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 }
-          ]);
-        }).to.throw('[Updates Encountered]: The length of removals was the same as the previous entries.');
+      it('should return an empty array if there are no changes', function() {
+        var result = entries.add([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 }
+        ]);
+        expect(result).to.deep.equal([]);
       });
     });
 
@@ -87,7 +85,7 @@ describe('FSTree', function() {
       });
 
       it('should find directory removals', function () {
-        var localEntries = Entries([
+        var localEntries = new Entries([
           { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
           { relativePath: 'c/', mode: '16384', size: 1, mtime: 1 },
           { relativePath: 'c/c.js', mode: '0o666', size: 1, mtime: 1 }
@@ -103,23 +101,22 @@ describe('FSTree', function() {
         ]);
       });
 
-      it('should throw if the amount of files is the same', function() {
-        expect(function() {
-          entries.remove([
-            { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
-            { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 }
-          ]);
-        }).to.throw('[Updates Encountered]: The length of removals was the same as the previous entries.');
+      it('should return an empty array if the file length is the same', function() {
+        var result = entries.remove([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 }
+        ]);
+
+        expect(result).to.deep.equal([]);
       });
 
-      it('should throw if the amount of files is more', function() {
-        expect(function() {
-          entries.remove([
-            { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
-            { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 },
-            { relativePath: 'c.js', mode: '0o666', size: 2, mtime: 1 }
-          ]);
-        }).to.throw('[Additions Encountered]: The length of removals was greater than the previous entries.');
+      it('should return an empty array if their are additions', function() {
+        var result = entries.remove([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 },
+          { relativePath: 'c.js', mode: '0o666', size: 2, mtime: 1 }
+        ]);
+        expect(result).to.deep.equal([]);
       });
 
     });
@@ -159,22 +156,21 @@ describe('FSTree', function() {
         ]);
       });
 
-      it('should throw if the amount of files is more', function() {
-        expect(function() {
-          entries.remove([
-            { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
-            { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 },
-            { relativePath: 'c.js', mode: '0o666', size: 2, mtime: 1 }
-          ]);
-        }).to.throw('[Additions Encountered]: The length of removals was greater than the previous entries.');
+      it('should return an empty array if their are additions', function() {
+        var result =  entries.remove([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'b.js', mode: '0o666', size: 2, mtime: 1 },
+          { relativePath: 'c.js', mode: '0o666', size: 2, mtime: 1 }
+        ]);
+        expect(result).to.deep.equal([]);
       });
 
-      it('should throw if less files are passed', function() {
-        expect(function() {
-          entries.add([
-            { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 }
-          ]);
-        }).to.throw('[Removals Encountered]: The length of removals was greater than the previous entries.');
+      it('should return an empty array if there are removals', function() {
+        var result = entries.add([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 }
+        ]);
+
+        expect(result).to.deep.equal([]);
       });
 
     });
@@ -225,6 +221,56 @@ describe('FSTree', function() {
             ['unlink', 'foo.js'],
           ]);
         });
+      });
+    });
+
+    context('FSTree with entries', function() {
+      beforeEach(function() {
+        fsTree = new FSTree({
+          entries: [
+            { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
+            { relativePath: 'c/d.js', mode: '0o666', size: 1, mtime: 1 },
+            { relativePath: 'a/c.js', mode: '0o666', size: 1, mtime: 1 }
+          ]
+        });
+      });
+
+      it('should detect additions', function() {
+        var result = fsTree.calculatePatch([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'c/d.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'a/c.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'a/j.js', mode: '0o666', size: 1, mtime: 1 }
+        ]);
+
+        expect(result).to.deep.equal([
+          ['create', 'a/j.js']
+        ]);
+      });
+
+      it('should detect removals', function() {
+        var result = fsTree.calculatePatch([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 }
+        ]);
+
+        expect(result).to.deep.equal([
+          ['unlink', 'a/c.js'],
+          ['unlink', 'c/d.js'],
+          ['rmdir', 'c']
+        ]);
+      });
+
+      it('should detect updates', function() {
+        var result = fsTree.calculatePatch([
+          { relativePath: 'a/b.js', mode: '0o666', size: 1, mtime: 1 },
+          { relativePath: 'c/d.js', mode: '0o666', size: 1, mtime: 2 },
+          { relativePath: 'a/c.js', mode: '0o666', size: 10, mtime: 1 }
+        ]);
+
+        expect(result).to.deep.equal([
+          ['change', 'a/c.js'],
+          ['change', 'c/d.js']
+        ]);
       });
     });
 
