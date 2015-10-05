@@ -240,11 +240,10 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   this._debug('patch: %o', patch);
 
-  var processFile = this.processFile.bind(this);
   var outputPath = this.outputPath;
 
   patch.forEach(function(entry) {
-    applyPatch(entry, this.outputToInputMappings, inputPath, outputPath, processFile);
+    this._applyPatch(entry, inputPath, outputPath);
   }, this);
 
   var count = nextTree.size;
@@ -259,7 +258,8 @@ Funnel.prototype.processFilters = function(inputPath) {
   });
 };
 
-function applyPatch(entry, outputToInput, inputPath, _outputPath, processFile) {
+Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath) {
+  var outputToInput = this.outputToInputMappings;
   var operation = entry[0];
   var outputRelative = entry[1];
 
@@ -280,13 +280,13 @@ function applyPatch(entry, outputToInput, inputPath, _outputPath, processFile) {
     case 'mkdir'  :
       fs.mkdirSync(outputPath);
     break;
-    case 'create' :
+    case 'create'/* also change */ :
       var relativePath = outputToInput[outputRelative];
-    if (relativePath === undefined) {
-      relativePath = outputToInput['/' + outputRelative];
-    }
-    processFile(inputPath + '/' + relativePath, outputPath, relativePath);
-    break;
+      if (relativePath === undefined) {
+        relativePath = outputToInput['/' + outputRelative];
+      }
+      this.processFile(inputPath + '/' + relativePath, outputPath, relativePath);
+      break;
     default: throw new Error('Unknown operation: ' + operation);
   }
 }
