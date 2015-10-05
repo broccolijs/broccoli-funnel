@@ -270,6 +270,7 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
 
   var outputPath = _outputPath + '/' + outputRelative;
 
+  this._debug('%s %s', operation, outputPath);
   switch (operation) {
     case 'unlink' :
       fs.unlinkSync(outputPath);
