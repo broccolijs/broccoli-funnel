@@ -22,6 +22,33 @@ describe('broccoli-funnel', function(){
     }
   });
 
+  describe('rebuilding', function() {
+
+    it('correctly rebuilds', function() {
+      var inputPath = path.join(fixturePath, 'dir1');
+      var node = new Funnel(inputPath, {
+        include: ['**/*.js']
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+
+          var mutatedFile = inputPath + '/' + 'subdir1/subsubdir2/some.js';
+          fs.writeFileSync(mutatedFile, fs.readFileSync(mutatedFile));
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+        });
+    });
+  });
+
   describe('processFile', function() {
     it('is not called when simply linking roots (aka no include/exclude)', function() {
       var inputPath = path.join(fixturePath, 'dir1');
