@@ -1,6 +1,7 @@
 # Broccoli Funnel
 
 [![Build Status](https://travis-ci.org/broccolijs/broccoli-funnel.svg?branch=master)](https://travis-ci.org/broccolijs/broccoli-funnel)
+[![Build status](https://ci.appveyor.com/api/projects/status/3y3wo7hipq6d0cbp/branch/master?svg=true)](https://ci.appveyor.com/project/embercli/broccoli-funnel/branch/master)
 
 Given an input node, the Broccoli Funnel plugin returns a new node with only a
 subset of the files from the input node. The files can be moved to different
