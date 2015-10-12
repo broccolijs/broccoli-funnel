@@ -176,7 +176,7 @@ Funnel.prototype.processFilters = function(inputPath) {
     files = this.files.slice(0); //clone to be compatible with walkSync
   } else {
     if (this._matchedWalk) {
-      files = walkSync(inputPath, undefined, this.include);
+      files = walkSync(inputPath, this.include);
     } else {
       files = walkSync(inputPath);
     }
