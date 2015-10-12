@@ -246,6 +246,36 @@ describe('broccoli-funnel', function(){
         });
     });
 
+    it('matches the deprecated: files *.css', function() {
+      var inputPath = path.join(fixturePath, 'dir1/subdir2');
+      var oldWarn = console.warn;
+      var message;
+      console.warn = function(s) {
+        message = arguments[0];
+      };
+
+      var node;
+      try {
+        expect(message).to.equal(undefined);
+
+        node = new Funnel(inputPath, {
+          files: ['*.css']
+        });
+
+        expect(message).to.equal('broccoli-funnel does not support `files:` option with globs, please use `include:` instead');
+
+      } finally {
+        console.warn = oldWarn;
+      }
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+          expect(walkSync(outputPath)).to.eql(['bar.css']);
+        });
+    });
+
     it('does not error with input node at a missing nested source', function() {
       var inputPath = path.join(fixturePath, 'dir1');
       var node = new Funnel(inputPath, {
