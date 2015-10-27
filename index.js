@@ -1,7 +1,7 @@
 'use strict';
 
 var fs = require('fs');
-var path = require('path');
+var path = require('path-posix');
 var mkdirp = require('mkdirp');
 var walkSync = require('walk-sync');
 var Minimatch = require('minimatch').Minimatch;
