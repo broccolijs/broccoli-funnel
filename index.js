@@ -193,7 +193,7 @@ Funnel.prototype._processEntries = function(entries) {
     var relativePath = entry.relativePath;
 
     // the destination paths "absolute" is actually stlil relative to the FSTree
-    entry.relativePath = ensureRelative(this.lookupDestinationPath(path.join(this.destDir, relativePath)));
+    entry.relativePath = ensureRelative(this.lookupDestinationPath(ensureRelative(path.join(this.destDir, relativePath))));
 
     this.outputToInputMappings[entry.relativePath] = relativePath;
 
@@ -206,7 +206,7 @@ Funnel.prototype._processPaths  = function(paths, outputToInputMappings) {
     slice(0).
     filter(this.includeFile, this).
     map(function(relativePath) {
-      var output = ensureRelative(this.lookupDestinationPath(path.join(this.destDir, relativePath)));
+      var output = ensureRelative(this.lookupDestinationPath(ensureRelative(path.join(this.destDir, relativePath))));
       this.outputToInputMappings[output] = relativePath;
       return output;
     }, this);

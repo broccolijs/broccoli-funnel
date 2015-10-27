@@ -694,7 +694,7 @@ describe('broccoli-funnel', function(){
       var node = new Funnel(inputPath);
 
       node.getDestinationPath = function(relativePath) {
-        return 'foo' + relativePath;
+        return 'foo/' + relativePath;
       };
 
       builder = new broccoli.Builder(node);
