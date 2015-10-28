@@ -13,7 +13,7 @@ require('mocha-jshint')();
 var Funnel = require('..');
 
 describe('broccoli-funnel', function(){
-  var fixturePath = path.join(__dirname, 'fixtures');
+  var fixturePath = __dirname + '/fixtures';
   var builder;
 
   afterEach(function() {
@@ -22,9 +22,36 @@ describe('broccoli-funnel', function(){
     }
   });
 
+  describe('rebuilding', function() {
+
+    it('correctly rebuilds', function() {
+      var inputPath = fixturePath + '/dir1';
+      var node = new Funnel(inputPath, {
+        include: ['**/*.js']
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+
+          var mutatedFile = inputPath + '/' + 'subdir1/subsubdir2/some.js';
+          fs.writeFileSync(mutatedFile, fs.readFileSync(mutatedFile));
+          return builder.build();
+        })
+        .then(function(results) {
+          var outputPath = results.directory;
+
+          expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+        });
+    });
+  });
+
   describe('processFile', function() {
     it('is not called when simply linking roots (aka no include/exclude)', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         processFile: function() {
           throw new Error('should never be called');
@@ -43,7 +70,7 @@ describe('broccoli-funnel', function(){
     it('is called for each included file', function() {
       var processFileArguments = [];
 
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         include: [ /.png$/, /.js$/ ],
         destDir: 'foo',
@@ -51,20 +78,28 @@ describe('broccoli-funnel', function(){
         processFile: function(sourcePath, destPath, relativePath) {
           var relSourcePath = sourcePath.replace(this.inputPaths[0], '__input_path__');
           var relDestPath = destPath.replace(this.outputPath, '__output_path__');
-          processFileArguments.push([relSourcePath, relDestPath, relativePath]);
+
+          processFileArguments.push([
+            relSourcePath,
+            relDestPath,
+            relativePath
+          ]);
         }
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
       .then(function(results) {
+
         var expected = [
-          [ path.join('__input_path__', 'subdir1/subsubdir1/foo.png'),
-            path.join('__output_path__', 'foo/subdir1/subsubdir1/foo.png'),
-            'subdir1/subsubdir1/foo.png' ],
-            [ path.join('__input_path__', 'subdir1/subsubdir2/some.js'),
-              path.join('__output_path__', 'foo/subdir1/subsubdir2/some.js'),
-              'subdir1/subsubdir2/some.js' ]
+          [ '__input_path__/subdir1/subsubdir1/foo.png',
+            '__output_path__/foo/subdir1/subsubdir1/foo.png',
+            'subdir1/subsubdir1/foo.png'
+          ],
+          [ '__input_path__/subdir1/subsubdir2/some.js',
+            '__output_path__/foo/subdir1/subsubdir2/some.js',
+            'subdir1/subsubdir2/some.js'
+          ]
         ];
 
         expect(processFileArguments).to.eql(expected);
@@ -72,7 +107,8 @@ describe('broccoli-funnel', function(){
     });
 
     it('is responsible for generating files in the destDir', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
+
       var node = new Funnel(inputPath, {
         include: [ /.png$/, /.js$/ ],
         destDir: 'foo',
@@ -87,12 +123,18 @@ describe('broccoli-funnel', function(){
       .then(function(results) {
         var outputPath = results.directory;
 
-        expect(walkSync(outputPath)).to.eql([]);
+        expect(walkSync(outputPath)).to.eql([
+          // only folders exist
+          'foo/',
+          'foo/subdir1/',
+          'foo/subdir1/subsubdir1/',
+          'foo/subdir1/subsubdir2/'
+        ]);
       });
     });
 
     it('works with mixed glob and RegExp includes', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         include: [ '**/*.png', /.js$/ ],
         destDir: 'foo',
@@ -107,13 +149,19 @@ describe('broccoli-funnel', function(){
       .then(function(results) {
         var outputPath = results.directory;
 
-        expect(walkSync(outputPath)).to.eql([]);
+        expect(walkSync(outputPath)).to.eql([
+          // only dir exist
+          'foo/',
+          'foo/subdir1/',
+          'foo/subdir1/subsubdir1/',
+          'foo/subdir1/subsubdir2/'
+        ]);
       });
     });
 
 
     it('correctly chooses _matchedWalk scenario', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node;
       node = new Funnel(inputPath, { include: [ '**/*.png', /.js$/ ] });
 
@@ -127,7 +175,7 @@ describe('broccoli-funnel', function(){
 
   describe('without filtering options', function() {
     it('linking roots without srcDir/destDir, can rebuild without error', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath);
 
       builder = new broccoli.Builder(node);
@@ -147,7 +195,7 @@ describe('broccoli-funnel', function(){
     });
 
     it('simply returns a copy of the input node', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath);
 
       builder = new broccoli.Builder(node);
@@ -160,7 +208,7 @@ describe('broccoli-funnel', function(){
     });
 
     it('simply returns a copy of the input node at a nested destination', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         destDir: 'some-random'
       });
@@ -168,7 +216,7 @@ describe('broccoli-funnel', function(){
       builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
-          var outputPath = path.join(results.directory, 'some-random');
+          var outputPath = results.directory + '/some-random';
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
         })
@@ -176,14 +224,14 @@ describe('broccoli-funnel', function(){
           return builder.build();
         })
         .then(function(results) {
-          var outputPath = path.join(results.directory, 'some-random');
+          var outputPath = results.directory + '/some-random';
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
         });
     });
 
     it('can properly handle the output path being a broken symlink', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         srcDir: 'subdir1'
       });
@@ -200,7 +248,7 @@ describe('broccoli-funnel', function(){
           return builder.build();
         })
         .then(function(results) {
-          var restrictedInputPath = path.join(inputPath, 'subdir1');
+          var restrictedInputPath = inputPath + '/subdir1';
           var outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
@@ -208,7 +256,7 @@ describe('broccoli-funnel', function(){
     });
 
     it('simply returns a copy of the input node at a nested source', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         srcDir: 'subdir1'
       });
@@ -216,7 +264,7 @@ describe('broccoli-funnel', function(){
       builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
-          var restrictedInputPath = path.join(inputPath, 'subdir1');
+          var restrictedInputPath = inputPath + '/subdir1';
           var outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
@@ -225,7 +273,7 @@ describe('broccoli-funnel', function(){
           return builder.build();
         })
         .then(function(results) {
-          var restrictedInputPath = path.join(inputPath, 'subdir1');
+          var restrictedInputPath = inputPath + '/subdir1';
           var outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
@@ -233,7 +281,7 @@ describe('broccoli-funnel', function(){
     });
 
     it('matches *.css', function() {
-      var inputPath = path.join(fixturePath, 'dir1/subdir2');
+      var inputPath = fixturePath + '/dir1/subdir2';
       var node = new Funnel(inputPath, {
         include: ['*.css']
       });
@@ -242,12 +290,15 @@ describe('broccoli-funnel', function(){
       return builder.build()
         .then(function(results) {
           var outputPath = results.directory;
-          expect(walkSync(outputPath)).to.eql(['bar.css']);
+
+          expect(walkSync(outputPath)).to.eql([
+            'bar.css'
+          ]);
         });
     });
 
     it('matches the deprecated: files *.css', function() {
-      var inputPath = path.join(fixturePath, 'dir1/subdir2');
+      var inputPath = fixturePath + '/dir1/subdir2';
       var oldWarn = console.warn;
       var message;
       console.warn = function(s) {
@@ -277,7 +328,7 @@ describe('broccoli-funnel', function(){
     });
 
     it('does not error with input node at a missing nested source', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         srcDir: 'subdir3',
         allowEmpty: true
@@ -305,7 +356,7 @@ describe('broccoli-funnel', function(){
 
   describe('with filtering options', function() {
     function testFiltering(includes, excludes, files, expected) {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         include: includes,
         exclude: excludes,
@@ -335,7 +386,7 @@ describe('broccoli-funnel', function(){
 
     describe('filtering with `files`', function() {
       it('can take a list of files', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
+        var inputPath = fixturePath + '/dir1';
         var node = new Funnel(inputPath, {
           files: [
             'subdir1/subsubdir1/foo.png',
@@ -363,7 +414,7 @@ describe('broccoli-funnel', function(){
 
     describe('`files` is incompatible with filters', function() {
       it('so error if `files` and `include` are set', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
+        var inputPath = fixturePath + '/dir1';
 
         expect(function() {
           new Funnel(inputPath, {
@@ -374,7 +425,7 @@ describe('broccoli-funnel', function(){
       });
 
       it('so error if `files` and `exclude` are set', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
+        var inputPath = fixturePath + '/dir1';
 
         expect(function() {
           new Funnel(inputPath, {
@@ -387,21 +438,27 @@ describe('broccoli-funnel', function(){
 
     describe('filtering with a `files` function', function() {
       it('can take files as a function', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
-        var filesCounter = 0;
+        var inputPath = fixturePath + '/dir1';
         var filesByCounter = [
+          // rebuild 1:
           [
             'subdir1/subsubdir1/foo.png',
             'subdir2/bar.css'
           ],
+
+          // rebuild 2:
           [ 'subdir1/subsubdir1/foo.png' ],
+
+          // rebuild 3:
           [],
+
+          // rebuild 4:
           ['subdir1/subsubdir2/some.js']
         ];
 
         var tree = new Funnel(inputPath, {
           files: function() {
-            return filesByCounter[filesCounter++];
+            return filesByCounter.shift();
           }
         });
 
@@ -462,7 +519,7 @@ describe('broccoli-funnel', function(){
       });
 
       it('can take files as a function with exclude (includeCache needs to be cleared)', function() {
-        var inputPath = path.join(fixturePath, 'dir1');
+        var inputPath = fixturePath + '/dir1';
         var filesCounter = 0;
         var filesByCounter = [
           [],
@@ -596,7 +653,7 @@ describe('broccoli-funnel', function(){
     });
 
     it('combined filtering', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         exclude: [ /.png$/, /.js$/ ],
         include: [ /.txt$/ ]
@@ -616,7 +673,7 @@ describe('broccoli-funnel', function(){
     });
 
     it('creates its output directory even if no files are matched', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath, {
         exclude: [ /.*/ ]
       });
@@ -633,11 +690,11 @@ describe('broccoli-funnel', function(){
 
   describe('with customized destination paths', function() {
     it('uses custom getDestinationPath function if provided', function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
       var node = new Funnel(inputPath);
 
       node.getDestinationPath = function(relativePath) {
-        return path.join('foo', relativePath);
+        return 'foo/' + relativePath;
       };
 
       builder = new broccoli.Builder(node);
@@ -645,7 +702,7 @@ describe('broccoli-funnel', function(){
         .then(function(results) {
           var outputPath = results.directory;
 
-          expect(walkSync(path.join(outputPath, 'foo'))).to.eql(walkSync(inputPath));
+          expect(walkSync(outputPath + '/foo')).to.eql(walkSync(inputPath));
         });
     });
   });
@@ -654,7 +711,7 @@ describe('broccoli-funnel', function(){
     var node;
 
     beforeEach(function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
 
       node = new Funnel(inputPath);
     });
@@ -699,7 +756,7 @@ describe('broccoli-funnel', function(){
     var node;
 
     beforeEach(function() {
-      var inputPath = path.join(fixturePath, 'dir1');
+      var inputPath = fixturePath + '/dir1';
 
       node = new Funnel(inputPath);
     });
