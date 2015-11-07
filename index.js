@@ -11,9 +11,10 @@ var symlinkOrCopy = require('symlink-or-copy');
 var debug = require('debug');
 var FSTree = require('fs-tree-diff');
 var rimraf = require('rimraf');
+var BlankObject = require('blank-object');
 
 function makeDictionary() {
-  var cache = Object.create(null);
+  var cache = new BlankObject();
 
   cache['_dict'] = null;
   delete cache['_dict'];
@@ -224,7 +225,7 @@ Funnel.prototype.processFilters = function(inputPath) {
     var entries;
 
     if (this._matchedWalk) {
-      entries = walkSync.entries(inputPath, undefined, this.include);
+      entries = walkSync.entries(inputPath, this.include);
     } else {
       entries = walkSync.entries(inputPath);
     }
