@@ -705,6 +705,31 @@ describe('broccoli-funnel', function(){
           expect(walkSync(outputPath + '/foo')).to.eql(walkSync(inputPath));
         });
     });
+
+    it('receives relative inputPath as argument and can escape destDir with ..', function() {
+      var inputPath = fixturePath + '/lib';
+      var node = new Funnel(inputPath, {
+        destDir: 'utility',
+        getDestinationPath: function(relativePath) {
+          if (relativePath === 'main.js') {
+            return '../utility.js';
+          }
+          return relativePath;
+        }
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build().then(function(results) {
+        var outputPath = results.directory;
+        expect(walkSync(outputPath)).to.eql([
+          'utility/',
+          'utility/utils/',
+          'utility/utils/foo.js',
+          'utility/utils.js',
+          'utility.js'
+        ]);
+      });
+    });
   });
 
   describe('includeFile', function() {
