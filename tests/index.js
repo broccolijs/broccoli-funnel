@@ -615,6 +615,22 @@ describe('broccoli-funnel', function(){
       });
     });
 
+    describe('debugName', function() {
+      it('falls back to the constructor name', function() {
+        var node = new Funnel('inputTree');
+        expect(node._debugName()).to.eql('Funnel');
+      });
+
+      it('prefers the provided  annotation', function() {
+        var node = new Funnel('inputTree', {
+          annotation: 'an annotation'
+        });
+
+        expect(node._debugName()).to.eql('an annotation');
+
+      });
+    });
+
     describe('exclude filtering', function() {
       function testAllExcludeMatchers(glob, regexp, func, expected) {
         it('can take a glob string', function() {

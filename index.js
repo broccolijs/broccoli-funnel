@@ -41,7 +41,7 @@ Funnel.prototype.constructor = Funnel;
 function Funnel(inputNode, options) {
   if (!(this instanceof Funnel)) { return new Funnel(inputNode, options); }
 
-  Plugin.call(this, [inputNode]);
+  Plugin.call(this, [inputNode], options);
 
   this._persistentOutput = true;
 
@@ -90,8 +90,12 @@ function Funnel(inputNode, options) {
   this._buildStart = undefined;
 }
 
+Funnel.prototype._debugName = function() {
+  return this.description || this._annotation || this.name || this.constructor.name;
+};
+
 Funnel.prototype._debug = function(message) {
-  debug('broccoli-funnel:' + (this.description || this.name || this.constructor.name)).apply(null, arguments);
+  debug('broccoli-funnel:' + (this._debugName())).apply(null, arguments);
 };
 
 Funnel.prototype._setupFilter = function(type) {
@@ -238,7 +242,7 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   this._currentTree = nextTree;
 
-  this._debug('patch: %o', patch);
+  this._debug('patch size: %d', patch.length);
 
   var outputPath = this.outputPath;
 
