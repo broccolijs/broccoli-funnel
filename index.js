@@ -242,7 +242,7 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   this._currentTree = nextTree;
 
-  this._debug('patch: %o', patch);
+  this._debug('patch size: %d', patch.length);
 
   var outputPath = this.outputPath;
 
