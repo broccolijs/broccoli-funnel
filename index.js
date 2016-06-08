@@ -223,7 +223,7 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   if (this.files && !this.exclude && !this.include) {
     // clone to be compatible with walkSync
-    nextTree = FSTree.fromPaths(this._processPaths(this.files));
+    nextTree = FSTree.fromPaths(this._processPaths(this.files), { sortAndExpand: true });
   } else {
     var entries;
 
@@ -233,9 +233,7 @@ Funnel.prototype.processFilters = function(inputPath) {
       entries = walkSync.entries(inputPath);
     }
 
-    nextTree = new FSTree({
-      entries: this._processEntries(entries)
-    });
+    nextTree = FSTree.fromEntries(this._processEntries(entries), { sortAndExpand: true });
   }
 
   var patch = this._currentTree.calculatePatch(nextTree);
