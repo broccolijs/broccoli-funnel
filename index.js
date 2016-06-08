@@ -205,7 +205,7 @@ Funnel.prototype._processEntries = function(entries) {
   }, this);
 };
 
-Funnel.prototype._processPaths  = function(paths, outputToInputMappings) {
+Funnel.prototype._processPaths  = function(paths) {
   return paths.
     slice(0).
     filter(this.includeFile, this).
@@ -276,10 +276,6 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
 
   this._debug('%s %s', operation, outputPath);
 
-  if (operation === 'change') {
-    operation = 'create';
-  }
-
   switch (operation) {
     case 'unlink' :
       fs.unlinkSync(outputPath);
@@ -290,7 +286,8 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
     case 'mkdir'  :
       fs.mkdirSync(outputPath);
     break;
-    case 'create'/* also change */ :
+    case 'change':
+    case 'create':
       var relativePath = outputToInput[outputRelative];
       if (relativePath === undefined) {
         relativePath = outputToInput['/' + outputRelative];
