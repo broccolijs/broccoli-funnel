@@ -205,7 +205,7 @@ Funnel.prototype._processEntries = function(entries) {
   }, this);
 };
 
-Funnel.prototype._processPaths  = function(paths, outputToInputMappings) {
+Funnel.prototype._processPaths  = function(paths) {
   return paths.
     slice(0).
     filter(this.includeFile, this).
@@ -223,7 +223,7 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   if (this.files && !this.exclude && !this.include) {
     // clone to be compatible with walkSync
-    nextTree = FSTree.fromPaths(this._processPaths(this.files));
+    nextTree = FSTree.fromPaths(this._processPaths(this.files), { sortAndExpand: true });
   } else {
     var entries;
 
@@ -233,9 +233,7 @@ Funnel.prototype.processFilters = function(inputPath) {
       entries = walkSync.entries(inputPath);
     }
 
-    nextTree = new FSTree({
-      entries: this._processEntries(entries)
-    });
+    nextTree = FSTree.fromEntries(this._processEntries(entries), { sortAndExpand: true });
   }
 
   var patch = this._currentTree.calculatePatch(nextTree);
@@ -276,10 +274,6 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
 
   this._debug('%s %s', operation, outputPath);
 
-  if (operation === 'change') {
-    operation = 'create';
-  }
-
   switch (operation) {
     case 'unlink' :
       fs.unlinkSync(outputPath);
@@ -290,7 +284,8 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
     case 'mkdir'  :
       fs.mkdirSync(outputPath);
     break;
-    case 'create'/* also change */ :
+    case 'change':
+    case 'create':
       var relativePath = outputToInput[outputRelative];
       if (relativePath === undefined) {
         relativePath = outputToInput['/' + outputRelative];

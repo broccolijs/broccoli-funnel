@@ -23,7 +23,7 @@
     "broccoli-plugin": "^1.0.0",
     "debug": "^2.2.0",
     "fast-ordered-set": "^1.0.0",
-    "fs-tree-diff": "^0.3.0",
+    "fs-tree-diff": "stefanpenner/fs-tree-diff#317e1f5",
     "minimatch": "^2.0.1",
     "mkdirp": "^0.5.0",
     "path-posix": "^1.0.0",
