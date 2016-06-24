@@ -1,5 +1,16 @@
 # master
 
+# 1.0.2
+
+* update minimatch
+
+# 1.0.1
+
+* fix annotations
+
+# 1.0.0
+
+* improve performance by improving output stability
 * Do not use `CoreObject`
 * Derive from broccoli-plugin base class
 
