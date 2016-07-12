@@ -738,11 +738,11 @@ describe('broccoli-funnel', function(){
       return builder.build().then(function(results) {
         var outputPath = results.directory;
         expect(walkSync(outputPath)).to.eql([
+          'utility.js',
           'utility/',
+          'utility/utils.js',
           'utility/utils/',
           'utility/utils/foo.js',
-          'utility/utils.js',
-          'utility.js'
         ]);
       });
     });
