@@ -1,5 +1,9 @@
 # master
 
+# 1.0.3
+
+* update fs-tree-diff, fixes "rename only file in directory bug", possible performance improvements.
+
 # 1.0.2
 
 * update minimatch
