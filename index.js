@@ -12,6 +12,18 @@ var debug = require('debug');
 var FSTree = require('fs-tree-diff');
 var rimraf = require('rimraf');
 var BlankObject = require('blank-object');
+var heimdall = require('heimdalljs');
+
+function ApplyPatchesSchema() {
+  this.mkdir = 0;
+  this.rmdir = 0;
+  this.unlink = 0;
+  this.change = 0;
+  this.create = 0;
+  this.other = 0;
+  this.processed = 0;
+  this.linked = 0;
+}
 
 function makeDictionary() {
   var cache = new BlankObject();
@@ -140,6 +152,7 @@ Funnel.prototype.shouldLinkRoots = function() {
 Funnel.prototype.build = function() {
   this._buildStart = new Date();
   this.destPath = path.join(this.outputPath, this.destDir);
+
   if (this.destPath[this.destPath.length -1] === '/') {
     this.destPath = this.destPath.slice(0, -1);
   }
@@ -219,13 +232,16 @@ Funnel.prototype._processPaths  = function(paths) {
 Funnel.prototype.processFilters = function(inputPath) {
   var nextTree;
 
+  var instrumentation = heimdall.start('derivePatches');
+  var entries;
+
   this.outputToInputMappings = {}; // we allow users to rename files
 
   if (this.files && !this.exclude && !this.include) {
+    entries = this._processPaths(this.files);
     // clone to be compatible with walkSync
-    nextTree = FSTree.fromPaths(this._processPaths(this.files), { sortAndExpand: true });
+    nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
   } else {
-    var entries;
 
     if (this._matchedWalk) {
       entries = walkSync.entries(inputPath, this.include);
@@ -233,34 +249,31 @@ Funnel.prototype.processFilters = function(inputPath) {
       entries = walkSync.entries(inputPath);
     }
 
-    nextTree = FSTree.fromEntries(this._processEntries(entries), { sortAndExpand: true });
+    entries = this._processEntries(entries);
+    nextTree = FSTree.fromEntries(entries, { sortAndExpand: true });
   }
 
-  var patch = this._currentTree.calculatePatch(nextTree);
+  var patches = this._currentTree.calculatePatch(nextTree);
 
   this._currentTree = nextTree;
 
-  this._debug('patch size: %d', patch.length);
+  instrumentation.stats.patches = patches.length;
+  instrumentation.stats.entries = entries.length;
 
   var outputPath = this.outputPath;
 
-  patch.forEach(function(entry) {
-    this._applyPatch(entry, inputPath, outputPath);
+  instrumentation.stop();
+
+  instrumentation = heimdall.start('applyPatch', ApplyPatchesSchema);
+
+  patches.forEach(function(entry) {
+    this._applyPatch(entry, inputPath, outputPath, instrumentation.stats);
   }, this);
 
-  var count = nextTree.size;
-
-  this._debug('processFilters %o', {
-    in: new Date() - this._buildStart + 'ms',
-    filesFound: this._currentTree.size,
-    filesProcessed: count,
-    operations: patch.length,
-    inputPath: inputPath,
-    destPath: this.destPath
-  });
+  instrumentation.stop();
 };
 
-Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath) {
+Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath, stats) {
   var outputToInput = this.outputToInputMappings;
   var operation = entry[0];
   var outputRelative = entry[1];
@@ -276,16 +289,26 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
 
   switch (operation) {
     case 'unlink' :
+      stats.unlink++;
+
       fs.unlinkSync(outputPath);
-    break;
+      break;
     case 'rmdir'  :
+      stats.rmdir++;
       fs.rmdirSync(outputPath);
-    break;
+      break;
     case 'mkdir'  :
+      stats.mkdir++;
       fs.mkdirSync(outputPath);
-    break;
+      break;
     case 'change':
+      stats.change++;
+      /* falls through */
     case 'create':
+      if (operation === 'create') {
+        stats.create++;
+      }
+
       var relativePath = outputToInput[outputRelative];
       if (relativePath === undefined) {
         relativePath = outputToInput['/' + outputRelative];
