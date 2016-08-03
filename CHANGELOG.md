@@ -1,5 +1,10 @@
 # master
 
+# 1.0.4
+
+* switch to heimdalljs-logger, allowing logs to show context within the broccoli
+  graph
+
 # 1.0.3
 
 * update fs-tree-diff, fixes "rename only file in directory bug", possible performance improvements.
