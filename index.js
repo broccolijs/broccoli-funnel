@@ -176,8 +176,11 @@ Funnel.prototype.build = function() {
   if (this.shouldLinkRoots()) {
     linkedRoots = true;
     if (fs.existsSync(inputPath)) {
-      rimraf.sync(this.outputPath);
-      this._copy(inputPath, this.destPath);
+      // Only re-symlink when either this.destPath doesn't exist or is not a symlink
+      if (!fs.existsSync(this.destPath) || !fs.lstatSync(this.destPath).isSymbolicLink()) {
+        rimraf.sync(this.outputPath);
+        this._copy(inputPath, this.destPath);
+      }
     } else if (this.allowEmpty) {
       mkdirp.sync(this.destPath);
     }
