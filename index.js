@@ -60,6 +60,7 @@ function Funnel(inputNode, options) {
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
   this._currentTree = new FSTree();
+  this._lastInputPath = null;
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -175,15 +176,28 @@ Funnel.prototype.build = function() {
   var linkedRoots = false;
   if (this.shouldLinkRoots()) {
     linkedRoots = true;
-    if (fs.existsSync(inputPath)) {
-      // Only re-symlink when either this.destPath doesn't exist or is not a symlink
-      if (!fs.existsSync(this.destPath) || !fs.lstatSync(this.destPath).isSymbolicLink()) {
-        rimraf.sync(this.outputPath);
+
+    var inputPathExist = fs.existsSync(inputPath);
+
+    if (this._lastInputPath ? !inputPathExist : inputPathExist) {
+      rimraf.sync(this.outputPath);
+
+      if (inputPathExist) {
         this._copy(inputPath, this.destPath);
       }
-    } else if (this.allowEmpty) {
-      mkdirp.sync(this.destPath);
     }
+
+    this._lastInputPath = inputPath;
+
+    // if (fs.existsSync(inputPath)) {
+    //   // Only re-symlink when either this.destPath doesn't exist or is not a symlink
+    //   // if (!fs.existsSync(this.destPath) || !fs.lstatSync(this.destPath).isSymbolicLink()) {
+    //     rimraf.sync(this.outputPath);
+    //     this._copy(inputPath, this.destPath);
+    //   // }
+    // } else if (this.allowEmpty) {
+    //   mkdirp.sync(this.destPath);
+    // }
   } else {
     this.processFilters(inputPath);
   }
