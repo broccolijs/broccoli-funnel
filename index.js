@@ -188,16 +188,6 @@ Funnel.prototype.build = function() {
     }
 
     this._lastInputPath = inputPath;
-
-    // if (fs.existsSync(inputPath)) {
-    //   // Only re-symlink when either this.destPath doesn't exist or is not a symlink
-    //   // if (!fs.existsSync(this.destPath) || !fs.lstatSync(this.destPath).isSymbolicLink()) {
-    //     rimraf.sync(this.outputPath);
-    //     this._copy(inputPath, this.destPath);
-    //   // }
-    // } else if (this.allowEmpty) {
-    //   mkdirp.sync(this.destPath);
-    // }
   } else {
     this.processFilters(inputPath);
   }
