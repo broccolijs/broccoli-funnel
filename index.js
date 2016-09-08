@@ -187,6 +187,16 @@ Funnel.prototype.build = function() {
       }
     }
 
+    if (!inputPathExist && this.allowEmpty) {
+      mkdirp.sync(this.destPath);
+    }
+
+    // TODO: verify if this scenario exists
+    // Refer to test "can properly handle the output path being a broken symlink"
+    if (inputPathExist && !fs.existsSync(this.outputPath)) {
+      this._copy(inputPath, this.destPath);
+    }
+
     this._lastInputPath = inputPath;
   } else {
     this.processFilters(inputPath);
