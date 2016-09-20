@@ -38,6 +38,8 @@
   "devDependencies": {
     "broccoli-builder": "^0.18.0",
     "chai": "^3.2.0",
+    "fixturify": "^0.3.0",
+    "fs-extra": "^0.30.0",
     "mocha": "~3.0.2",
     "mocha-jshint": "2.3.1",
     "rimraf": "^2.3.2",
