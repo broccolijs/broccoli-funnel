@@ -20,7 +20,7 @@ var Funnel = require('..');
 
 describe('broccoli-funnel', function(){
   var builder;
-  var FIXTURE_INPUT = __dirname + '/../tmp/INPUT';
+  var FIXTURE_INPUT = path.resolve(__dirname, '../tmp/INPUT');
 
   beforeEach(function() {
     fs.mkdirpSync(FIXTURE_INPUT);
@@ -57,7 +57,6 @@ describe('broccoli-funnel', function(){
   });
 
   describe('rebuilding', function() {
-
     it('correctly rebuilds', function() {
       var inputPath = FIXTURE_INPUT + '/dir1';
       var node = new Funnel(FIXTURE_INPUT + '/dir1', {
@@ -79,6 +78,73 @@ describe('broccoli-funnel', function(){
           var outputPath = results.directory;
 
           expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+        });
+    });
+  });
+
+  describe('linkRoots', function() {
+    it('links input to output if possible', function() {
+      var node = new Funnel(FIXTURE_INPUT);
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
+        });
+    });
+
+    it('links input to destDir if possible', function() {
+      var node = new Funnel(FIXTURE_INPUT, {
+        destDir: 'output'
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          expect(fs.lstatSync(results.directory + '/output').isSymbolicLink()).to.eql(true);
+          expect(fs.realpathSync(results.directory + '/output')).to.eql(FIXTURE_INPUT);
+        });
+    });
+
+    it('links srcDir to output if possible', function() {
+      var node = new Funnel(FIXTURE_INPUT, {
+        srcDir: 'dir1'
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
+          expect(fs.realpathSync(results.directory)).to.eql(path.resolve(FIXTURE_INPUT, 'dir1'));
+        });
+    });
+
+    it('links srcDir to destDir if possible', function() {
+      var node = new Funnel(FIXTURE_INPUT, {
+        srcDir: 'lib',
+        destDir: 'output'
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          expect(fs.lstatSync(results.directory + '/output').isSymbolicLink()).to.eql(true);
+          expect(fs.realpathSync(results.directory + '/output')).to.eql(path.resolve(FIXTURE_INPUT, 'lib'));
+        });
+    });
+
+    it('stable on idempotent rebuild', function() {
+      var node = new Funnel(FIXTURE_INPUT + '/dir1');
+      var stat;
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          stat = fs.lstatSync(results.directory);
+          return builder.build();
+        })
+        .then(function(results) {
+          expect(fs.lstatSync(results.directory)).to.eql(stat);
         });
     });
   });
@@ -192,7 +258,6 @@ describe('broccoli-funnel', function(){
         ]);
       });
     });
-
 
     it('correctly chooses _matchedWalk scenario', function() {
       var inputPath = FIXTURE_INPUT + '/dir1';

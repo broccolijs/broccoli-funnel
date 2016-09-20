@@ -60,6 +60,7 @@ function Funnel(inputNode, options) {
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
   this._currentTree = new FSTree();
+  this._lastInputPath = null;
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -175,12 +176,28 @@ Funnel.prototype.build = function() {
   var linkedRoots = false;
   if (this.shouldLinkRoots()) {
     linkedRoots = true;
-    if (fs.existsSync(inputPath)) {
+
+    var inputPathExist = fs.existsSync(inputPath);
+
+    if (this._lastInputPath ? !inputPathExist : inputPathExist) {
       rimraf.sync(this.outputPath);
-      this._copy(inputPath, this.destPath);
-    } else if (this.allowEmpty) {
+
+      if (inputPathExist) {
+        this._copy(inputPath, this.destPath);
+      }
+    }
+
+    if (!inputPathExist && this.allowEmpty) {
       mkdirp.sync(this.destPath);
     }
+
+    // TODO: verify if this scenario exists
+    // Refer to test "can properly handle the output path being a broken symlink"
+    if (inputPathExist && !fs.existsSync(this.outputPath)) {
+      this._copy(inputPath, this.destPath);
+    }
+
+    this._lastInputPath = inputPath;
   } else {
     this.processFilters(inputPath);
   }
