@@ -3,7 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var RSVP = require('rsvp');
-var expect = require('expect.js');
+var expect = require('chai').expect;
 var walkSync = require('walk-sync');
 var broccoli = require('broccoli-builder');
 var rimraf = RSVP.denodeify(require('rimraf'));
@@ -421,7 +421,7 @@ describe('broccoli-funnel', function(){
             files: ['anything'],
             include: ['*.txt']
           });
-        }).to.throwException('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+        }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
       });
 
       it('so error if `files` and `exclude` are set', function() {
@@ -432,7 +432,7 @@ describe('broccoli-funnel', function(){
             files: function() { return ['anything']; },
             exclude: ['*.md']
           });
-        }).to.throwException('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+        }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
       });
     });
 
@@ -760,36 +760,36 @@ describe('broccoli-funnel', function(){
     it('returns false if the path is included in an exclude filter', function() {
       node.exclude = [ /.foo$/, /.bar$/ ];
 
-      expect(node.includeFile('blah/blah/blah.foo')).to.not.be.ok();
-      expect(node.includeFile('blah/blah/blah.bar')).to.not.be.ok();
-      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.foo')).to.eql(false);
+      expect(node.includeFile('blah/blah/blah.bar')).to.eql(false);
+      expect(node.includeFile('blah/blah/blah.baz')).to.eql(true);
     });
 
     it('returns true if the path is included in an include filter', function() {
       node.include = [ /.foo$/, /.bar$/ ];
 
-      expect(node.includeFile('blah/blah/blah.foo')).to.be.ok();
-      expect(node.includeFile('blah/blah/blah.bar')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.foo')).to.eql(true);
+      expect(node.includeFile('blah/blah/blah.bar')).to.eql(true);
     });
 
     it('returns false if the path is not included in an include filter', function() {
       node.include = [ /.foo$/, /.bar$/ ];
 
-      expect(node.includeFile('blah/blah/blah.baz')).to.not.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.not.eql(true);
     });
 
     it('returns true if no patterns were used', function() {
-      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.eql(true);
     });
 
     it('uses a cache to ensure we do not recalculate the filtering on subsequent attempts', function() {
-      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.eql(true);
 
       // changing the filter mid-run should have no result on
       // previously calculated paths
       node.include = [ /.foo$/, /.bar$/ ];
 
-      expect(node.includeFile('blah/blah/blah.baz')).to.be.ok();
+      expect(node.includeFile('blah/blah/blah.baz')).to.eql(true);
     });
   });
 

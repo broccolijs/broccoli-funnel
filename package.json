@@ -38,7 +38,6 @@
   "devDependencies": {
     "broccoli-builder": "^0.18.0",
     "chai": "^3.2.0",
-    "expect.js": "^0.3.1",
     "mocha": "~3.0.2",
     "mocha-jshint": "2.3.1",
     "rimraf": "^2.3.2",
