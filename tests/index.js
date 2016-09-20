@@ -5,7 +5,7 @@ var path = require('path');
 var RSVP = require('rsvp');
 var expect = require('expect.js');
 var walkSync = require('walk-sync');
-var broccoli = require('broccoli');
+var broccoli = require('broccoli-builder');
 var rimraf = RSVP.denodeify(require('rimraf'));
 
 require('mocha-jshint')();
