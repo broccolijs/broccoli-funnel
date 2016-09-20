@@ -82,7 +82,7 @@ describe('broccoli-funnel', function(){
     });
   });
 
-  describe.only('linkRoots', function() {
+  describe('linkRoots', function() {
     it('links input to output if possible', function() {
       var node = new Funnel(FIXTURE_INPUT);
 
