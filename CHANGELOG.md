@@ -1,5 +1,17 @@
 # master
 
+# 1.0.7
+
+* [PERF] when linking roots, only remove symlinks when absolutely needed.
+
+# 1.0.6
+
+* bump heimdall
+
+# 1.0.5
+
+* include only needed files
+
 # 1.0.4
 
 * switch to heimdalljs-logger, allowing logs to show context within the broccoli
