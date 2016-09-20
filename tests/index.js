@@ -9,7 +9,12 @@ var broccoli = require('broccoli-builder');
 var rimraf = RSVP.denodeify(require('rimraf'));
 var fixturify = require('fixturify');
 
-require('mocha-jshint')();
+require('mocha-jshint')({
+  paths: [
+    'tests/index.js',
+    'index.js'
+  ]
+});
 
 var Funnel = require('..');
 
