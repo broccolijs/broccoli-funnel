@@ -134,14 +134,12 @@ describe('broccoli-funnel', function(){
     });
 
     it('stable on idempotent rebuild', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
       var node = new Funnel(FIXTURE_INPUT + '/dir1');
       var stat;
 
       builder = new broccoli.Builder(node);
       return builder.build()
         .then(function(results) {
-          var outputPath = results.directory;
           stat = fs.lstatSync(results.directory);
           return builder.build();
         })
