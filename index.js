@@ -13,6 +13,7 @@ var FSTree = require('fs-tree-diff');
 var rimraf = require('rimraf');
 var BlankObject = require('blank-object');
 var heimdall = require('heimdalljs');
+var existsSync = require('exists-sync');
 
 function ApplyPatchesSchema() {
   this.mkdir = 0;
@@ -191,8 +192,10 @@ Funnel.prototype.build = function() {
      * specifying `this.allowEmpty`.
      */
 
-    var inputPathExists = fs.existsSync(inputPath);
-    var outputPathExists = fs.existsSync(this.outputPath);
+    var inputPathExists = existsSync(inputPath);
+
+    // This is specifically looking for broken symlinks.
+    var outputPathExists = existsSync(this.outputPath);
 
     // Doesn't count as a rebuild if there's not an existing outputPath.
     this._isRebuild = this._isRebuild && outputPathExists;
@@ -450,7 +453,7 @@ Funnel.prototype._copy = function(sourcePath, destPath) {
   try {
     symlinkOrCopy.sync(sourcePath, destPath);
   } catch(e) {
-    if (!fs.existsSync(destDir)) {
+    if (!existsSync(destDir)) {
       mkdirp.sync(destDir);
     }
     try {
