@@ -13,6 +13,7 @@ var FSTree = require('fs-tree-diff');
 var rimraf = require('rimraf');
 var BlankObject = require('blank-object');
 var heimdall = require('heimdalljs');
+var existsSync = require('exists-sync');
 
 function ApplyPatchesSchema() {
   this.mkdir = 0;
@@ -60,7 +61,7 @@ function Funnel(inputNode, options) {
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
   this._currentTree = new FSTree();
-  this._lastInputPath = null;
+  this._isRebuild = false;
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -177,27 +178,57 @@ Funnel.prototype.build = function() {
   if (this.shouldLinkRoots()) {
     linkedRoots = true;
 
-    var inputPathExist = fs.existsSync(inputPath);
+    /**
+     * We want to link the roots of these directories, but there are a few
+     * edge cases we must account for.
+     *
+     * 1. It's possible that the original input doesn't actually exist.
+     * 2. It's possible that the output symlink has been broken.
+     * 3. We need slightly different behavior on rebuilds.
+     *
+     * Behavior has been modified to always having an `else` clause so that
+     * the code is forced to account for all scenarios. Not accounting for
+     * all scenarios made it possible for initial builds to succeed without
+     * specifying `this.allowEmpty`.
+     */
 
-    if (this._lastInputPath ? !inputPathExist : inputPathExist) {
-      rimraf.sync(this.outputPath);
+    var inputPathExists = existsSync(inputPath);
 
-      if (inputPathExist) {
+    // This is specifically looking for broken symlinks.
+    var outputPathExists = existsSync(this.outputPath);
+
+    // Doesn't count as a rebuild if there's not an existing outputPath.
+    this._isRebuild = this._isRebuild && outputPathExists;
+
+    if (this._isRebuild) {
+      if (inputPathExists) {
+        // Already works because of symlinks. Do nothing.
+      } else if (!inputPathExists && this.allowEmpty) {
+        // Make sure we're safely using a new outputPath since we were previously symlinked:
+        rimraf.sync(this.outputPath);
+        // Create a new empty folder:
+        mkdirp.sync(this.destPath);
+      } else { // this._isRebuild && !inputPathExists && !this.allowEmpty
+        // Need to remove it on the rebuild.
+        // Can blindly remove a symlink if path exists.
+        rimraf.sync(this.outputPath);
+      }
+    } else { // Not a rebuild.
+      if (inputPathExists) {
+        // We don't want to use the generated-for-us folder.
+        // Instead let's remove it:
+        rimraf.sync(this.outputPath);
+        // And then symlinkOrCopy over top of it:
         this._copy(inputPath, this.destPath);
+      } else if (!inputPathExists && this.allowEmpty) {
+        // Can't symlink nothing, so make an empty folder at `destPath`:
+        mkdirp.sync(this.destPath);
+      } else { // !this._isRebuild && !inputPathExists && !this.allowEmpty
+        throw new Error('You specified a `"srcDir": ' + this.srcDir + '` which does not exist and did not specify `"allowEmpty": true`.');
       }
     }
 
-    if (!inputPathExist && this.allowEmpty) {
-      mkdirp.sync(this.destPath);
-    }
-
-    // TODO: verify if this scenario exists
-    // Refer to test "can properly handle the output path being a broken symlink"
-    if (inputPathExist && !fs.existsSync(this.outputPath)) {
-      this._copy(inputPath, this.destPath);
-    }
-
-    this._lastInputPath = inputPath;
+    this._isRebuild = true;
   } else {
     this.processFilters(inputPath);
   }
@@ -422,7 +453,7 @@ Funnel.prototype._copy = function(sourcePath, destPath) {
   try {
     symlinkOrCopy.sync(sourcePath, destPath);
   } catch(e) {
-    if (!fs.existsSync(destDir)) {
+    if (!existsSync(destDir)) {
       mkdirp.sync(destDir);
     }
     try {

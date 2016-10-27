@@ -147,6 +147,25 @@ describe('broccoli-funnel', function(){
           expect(fs.lstatSync(results.directory)).to.eql(stat);
         });
     });
+
+    it('throws error on unspecified allowEmpty', function() {
+      var assertions = 0;
+      var inputPath = FIXTURE_INPUT + '/dir1';
+      var node = new Funnel(inputPath, {
+        srcDir: 'subdir3',
+        destDir: 'subdir3'
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .catch(function(error) {
+          expect(error.stack.toString()).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
+          assertions++;
+        })
+        .then(function() {
+          expect(assertions).to.equal(1, 'Build threw an error.');
+        });
+    });
   });
 
   describe('processFile', function() {
