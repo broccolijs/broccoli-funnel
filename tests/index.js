@@ -148,6 +148,23 @@ describe('broccoli-funnel', function(){
         });
     });
 
+    it('properly supports relative path input node', function() {
+      var assertions = 0;
+
+      var node = new Funnel('../broccoli-funnel', {
+        destDir: 'foo'
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .catch(function(error) {
+          assertions++;
+        })
+        .then(function() {
+          expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
+        });
+    });
+
     it('throws error on unspecified allowEmpty', function() {
       var assertions = 0;
       var inputPath = FIXTURE_INPUT + '/dir1';
