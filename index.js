@@ -51,12 +51,15 @@ function isNotAPattern(pattern) {
 
 Funnel.prototype = Object.create(Plugin.prototype);
 Funnel.prototype.constructor = Funnel;
-function Funnel(inputNode, options) {
-  if (!(this instanceof Funnel)) { return new Funnel(inputNode, options); }
+function Funnel(inputNode, _options) {
+  if (!(this instanceof Funnel)) { return new Funnel(inputNode, _options); }
 
-  Plugin.call(this, [inputNode], options);
-
-  this._persistentOutput = true;
+  var options = _options || {};
+  Plugin.call(this, [inputNode], {
+    annotation: options.annotation,
+    persistentOutput: true,
+    needsCache: false
+  });
 
   this._includeFileCache = makeDictionary();
   this._destinationPathCache = makeDictionary();
