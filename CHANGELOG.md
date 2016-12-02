@@ -1,5 +1,9 @@
 # master
 
+# 1.1.0
+
+* Opt out of cache directory creation.
+
 # 1.0.7
 
 * [PERF] when linking roots, only remove symlinks when absolutely needed.
