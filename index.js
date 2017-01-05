@@ -14,6 +14,7 @@ var rimraf = require('rimraf');
 var BlankObject = require('blank-object');
 var heimdall = require('heimdalljs');
 var existsSync = require('exists-sync');
+var RSVP = require('rsvp');
 
 function ApplyPatchesSchema() {
   this.mkdir = 0;
@@ -155,6 +156,14 @@ Funnel.prototype.shouldLinkRoots = function() {
 };
 
 Funnel.prototype.build = function() {
+  this.out = new FSTree({
+    root: this.outputPath
+  });
+
+  return new RSVP.Promise(resolve => resolve(this._build()));
+};
+
+Funnel.prototype._build = function() {
   this._buildStart = new Date();
   this.destPath = path.join(this.outputPath, this.destDir);
 
@@ -311,20 +320,18 @@ Funnel.prototype.processFilters = function(inputPath) {
   instrumentation.stats.patches = patches.length;
   instrumentation.stats.entries = entries.length;
 
-  var outputPath = this.outputPath;
-
   instrumentation.stop();
 
   instrumentation = heimdall.start('applyPatch', ApplyPatchesSchema);
 
   patches.forEach(function(entry) {
-    this._applyPatch(entry, inputPath, outputPath, instrumentation.stats);
+    this._applyPatch(entry, inputPath, instrumentation.stats);
   }, this);
 
   instrumentation.stop();
 };
 
-Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath, stats) {
+Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
   var outputToInput = this.outputToInputMappings;
   var operation = entry[0];
   var outputRelative = entry[1];
@@ -334,23 +341,21 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
     return;
   }
 
-  var outputPath = _outputPath + '/' + outputRelative;
-
-  this._debug('%s %s', operation, outputPath);
+  this._debug('%s %s', operation, outputRelative);
 
   switch (operation) {
     case 'unlink' :
       stats.unlink++;
 
-      fs.unlinkSync(outputPath);
+      this.out.unlinkSync(outputRelative);
       break;
     case 'rmdir'  :
       stats.rmdir++;
-      fs.rmdirSync(outputPath);
+      this.out.rmdirSync(outputRelative);
       break;
     case 'mkdir'  :
       stats.mkdir++;
-      fs.mkdirSync(outputPath);
+      this.out.mkdirSync(outputRelative);
       break;
     case 'change':
       stats.change++;
@@ -364,7 +369,7 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, _outputPath
       if (relativePath === undefined) {
         relativePath = outputToInput['/' + outputRelative];
       }
-      this.processFile(inputPath + '/' + relativePath, outputPath, relativePath);
+      this.processFile(inputPath + '/' + relativePath, outputRelative, relativePath);
       break;
     default: throw new Error('Unknown operation: ' + operation);
   }
