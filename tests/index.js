@@ -572,7 +572,7 @@ describe('broccoli-funnel', function(){
     });
 
     describe('filtering with a `files` function', function() {
-      it('can take files as a function', function() {
+      it.only('can take files as a function', function() {
         var inputPath = FIXTURE_INPUT + '/dir1';
         var filesByCounter = [
           // rebuild 1:

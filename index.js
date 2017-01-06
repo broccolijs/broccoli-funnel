@@ -347,6 +347,7 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
     case 'unlink' :
       stats.unlink++;
 
+      debugger;
       this.out.unlinkSync(outputRelative);
       break;
     case 'rmdir'  :
@@ -459,7 +460,9 @@ Funnel.prototype._copy = function(sourcePath, destPath) {
   var destDir = path.dirname(destPath);
 
   try {
-    symlinkOrCopy.sync(sourcePath, destPath);
+    // TODO: we want this.out.symlinkOrCopy?
+    // symlinkOrCopy.sync(sourcePath, destPath);
+    symlinkOrCopy.sync(sourcePath, this.out.root + '/' + destPath);
   } catch(e) {
     if (!existsSync(destDir)) {
       mkdirp.sync(destDir);
