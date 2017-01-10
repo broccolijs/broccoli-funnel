@@ -7,7 +7,6 @@ var walkSync = require('walk-sync');
 var Minimatch = require('minimatch').Minimatch;
 var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
-var symlinkOrCopy = require('symlink-or-copy');
 var debug = require('debug');
 var FSTree = require('fs-tree-diff');
 var rimraf = require('rimraf');
@@ -15,6 +14,7 @@ var BlankObject = require('blank-object');
 var heimdall = require('heimdalljs');
 var existsSync = require('exists-sync');
 var RSVP = require('rsvp');
+var symlinkOrCopy = require('symlink-or-copy');
 
 function ApplyPatchesSchema() {
   this.mkdir = 0;
@@ -156,11 +156,13 @@ Funnel.prototype.shouldLinkRoots = function() {
 };
 
 Funnel.prototype.build = function() {
-  this.out = new FSTree({
+  this.out = this.out || new FSTree({
     root: this.outputPath
   });
 
-  return new RSVP.Promise(resolve => resolve(this._build()));
+  this.out.start();
+
+  return new RSVP.Promise(resolve => resolve(this._build())).finally(() => this.out.stop());
 };
 
 Funnel.prototype._build = function() {
@@ -347,7 +349,6 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
     case 'unlink' :
       stats.unlink++;
 
-      debugger;
       this.out.unlinkSync(outputRelative);
       break;
     case 'rmdir'  :
@@ -453,16 +454,14 @@ Funnel.prototype._matchesPattern = function(pattern, relativePath) {
 };
 
 Funnel.prototype.processFile = function(sourcePath, destPath /*, relativePath */) {
-  this._copy(sourcePath, destPath);
+  this.out.symlinkSync(sourcePath, destPath);
 };
 
 Funnel.prototype._copy = function(sourcePath, destPath) {
   var destDir = path.dirname(destPath);
 
   try {
-    // TODO: we want this.out.symlinkOrCopy?
-    // symlinkOrCopy.sync(sourcePath, destPath);
-    symlinkOrCopy.sync(sourcePath, this.out.root + '/' + destPath);
+    symlinkOrCopy.sync(sourcePath, destPath);
   } catch(e) {
     if (!existsSync(destDir)) {
       mkdirp.sync(destDir);
@@ -475,5 +474,6 @@ Funnel.prototype._copy = function(sourcePath, destPath) {
     symlinkOrCopy.sync(sourcePath, destPath);
   }
 };
+
 
 module.exports = Funnel;
