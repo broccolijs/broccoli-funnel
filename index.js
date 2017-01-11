@@ -9,6 +9,7 @@ var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
 var debug = require('debug');
 var FSTree = require('fs-tree-diff');
+var FSMergeTree = require('fs-tree-diff/lib/fs-merge-tree');
 var rimraf = require('rimraf');
 var BlankObject = require('blank-object');
 var heimdall = require('heimdalljs');
@@ -156,6 +157,9 @@ Funnel.prototype.shouldLinkRoots = function() {
 };
 
 Funnel.prototype.build = function() {
+  this.in = this.in || new FSMergeTree({
+    roots: this.inputPaths,
+  });
   this.out = this.out || new FSTree({
     root: this.outputPath
   });
@@ -173,6 +177,7 @@ Funnel.prototype._build = function() {
     this.destPath = this.destPath.slice(0, -1);
   }
 
+  // TODO: this.in
   var inputPath = this.inputPaths[0];
   if (this.srcDir) {
     inputPath = path.join(inputPath, this.srcDir);
@@ -206,6 +211,7 @@ Funnel.prototype._build = function() {
      * specifying `this.allowEmpty`.
      */
 
+    // TODO: this.in
     var inputPathExists = existsSync(inputPath);
 
     // This is specifically looking for broken symlinks.
@@ -233,6 +239,7 @@ Funnel.prototype._build = function() {
         // Instead let's remove it:
         rimraf.sync(this.outputPath);
         // And then symlinkOrCopy over top of it:
+        // TODO: this.in.root
         this._copy(inputPath, this.destPath);
       } else if (!inputPathExists && this.allowEmpty) {
         // Can't symlink nothing, so make an empty folder at `destPath`:
@@ -305,6 +312,7 @@ Funnel.prototype.processFilters = function(inputPath) {
     nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
   } else {
 
+    // TODO: this.in
     if (this._matchedWalk) {
       entries = walkSync.entries(inputPath, this.include);
     } else {
@@ -371,6 +379,7 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
       if (relativePath === undefined) {
         relativePath = outputToInput['/' + outputRelative];
       }
+      // TODO: this.in?
       this.processFile(inputPath + '/' + relativePath, outputRelative, relativePath);
       break;
     default: throw new Error('Unknown operation: ' + operation);
