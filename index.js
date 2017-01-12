@@ -321,13 +321,6 @@ Funnel.prototype.processFilters = function(inputPath) {
     // clone to be compatible with walkSync
     nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
   } else {
-
-    // TODO: lazily do this in fs-tree-diff
-    this.in[0]._entries = walkSync.entries(this.in[0].root);
-    this.in[0]._entries.forEach(e => {
-      e.relativePath = e.relativePath.replace(/\/$/, '');
-    });
-
     if (this._matchedWalk) {
       entries = walkSync.entries(inputPath, Object.assign({}, this.include, { fs: this.in[0] }));
     } else {

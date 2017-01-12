@@ -203,7 +203,7 @@ describe('broccoli-funnel', function(){
       });
     });
 
-    it.only('is called for each included file', function() {
+    it('is called for each included file', function() {
       var processFileArguments = [];
 
       var inputPath = FIXTURE_INPUT + '/dir1';
