@@ -157,7 +157,7 @@ Funnel.prototype.shouldLinkRoots = function() {
 };
 
 Funnel.prototype.build = function() {
-  this.in = this.in || new FSMergeTree({
+  this.in = new FSMergeTree({
     roots: this.inputPaths,
   });
   this.out = this.out || new FSTree({
