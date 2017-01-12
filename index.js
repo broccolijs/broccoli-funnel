@@ -177,16 +177,13 @@ Funnel.prototype._build = function() {
     this.destPath = this.destPath.slice(0, -1);
   }
 
-  var relativeInputPath;
-  var absoluteInputPath;
-
   if (this.srcDir) {
-    relativeInputPath = this.srcDir;
-    absoluteInputPath = path.join(this.inputPaths[0], relativeInputPath);
-  } else {
-    relativeInputPath = '.';
-    absoluteInputPath = this.inputPaths[0];
+    this.in[0] = this.in[0].chdir(this.srcDir, {
+      allowEmpty: true
+    });
   }
+
+  let absoluteInputPath = this.in[0].resolvePath('.');
 
   if (this._dynamicFilesFunc) {
     this.lastFiles = this.files;
@@ -222,7 +219,7 @@ Funnel.prototype._build = function() {
      * specifying `this.allowEmpty`.
      */
 
-    var inputPathExists = existsSync(absoluteInputPath);
+    let inputPathExists = this.in[0].existsSync('.');
 
     // This is specifically looking for broken symlinks.
     var outputPathExists = existsSync(this.outputPath);
@@ -249,7 +246,12 @@ Funnel.prototype._build = function() {
         // Instead let's remove it:
         rimraf.sync(this.outputPath);
         // And then symlinkOrCopy over top of it:
-        // TODO: this.in.root
+        // TODO: change tracking.  In principle we could enable support for
+        //  `this.out.symlinkSync(this.in[0].resolvePath('.'), '.'`)`
+        //  ie symlinking the out tree's root to the in tree
+        //  however it makes fstree a bit more complicated, and when we have
+        //  change tracking linkRoots will just be replaced by making this.out a
+        //  projection of this.in[0] (via chdir and globs)
         this._copy(absoluteInputPath, this.destPath);
       } else if (!inputPathExists && this.allowEmpty) {
         // Can't symlink nothing, so make an empty folder at `destPath`:
@@ -261,7 +263,7 @@ Funnel.prototype._build = function() {
 
     this._isRebuild = true;
   } else {
-    this.processFilters(relativeInputPath);
+    this.processFilters('.');
   }
 
   this._debug('build, %o', {
@@ -308,6 +310,8 @@ Funnel.prototype._processPaths  = function(paths) {
     }, this);
 };
 
+// TODO: inputPath is always '.' now because if we have srcDir this is handled
+// via this.in[0] being a projection
 Funnel.prototype.processFilters = function(inputPath) {
   var nextTree;
 
