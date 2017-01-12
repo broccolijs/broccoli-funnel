@@ -203,7 +203,7 @@ describe('broccoli-funnel', function(){
       });
     });
 
-    it('is called for each included file', function() {
+    it.only('is called for each included file', function() {
       var processFileArguments = [];
 
       var inputPath = FIXTURE_INPUT + '/dir1';
@@ -215,10 +215,8 @@ describe('broccoli-funnel', function(){
         // destPath is relative but unmapped
         // relativePath is mapped
         processFile: function(sourcePath, destPath, relativePath) {
-          var relSourcePath = sourcePath.replace(this.inputPaths[0], '__input_path__');
-
           processFileArguments.push([
-            relSourcePath,
+            sourcePath,
             destPath,
             relativePath
           ]);
@@ -230,11 +228,11 @@ describe('broccoli-funnel', function(){
       .then(function(results) {
 
         var expected = [
-          [ '__input_path__/subdir1/subsubdir1/foo.png',
+          [ './subdir1/subsubdir1/foo.png',
             'foo/subdir1/subsubdir1/foo.png',
             'subdir1/subsubdir1/foo.png'
           ],
-          [ '__input_path__/subdir1/subsubdir2/some.js',
+          [ './subdir1/subsubdir2/some.js',
             'foo/subdir1/subsubdir2/some.js',
             'subdir1/subsubdir2/some.js'
           ]
@@ -603,7 +601,6 @@ describe('broccoli-funnel', function(){
 
         return builder.build()
         .then(function(results) {
-          console.log('build 1');
           var outputPath = results.directory;
 
           var expected = [
@@ -620,7 +617,6 @@ describe('broccoli-funnel', function(){
           return builder.build();
         })
         .then(function(results) {
-          console.log('build 2');
           var outputPath = results.directory;
 
           var expected = [
@@ -635,7 +631,6 @@ describe('broccoli-funnel', function(){
           return builder.build();
         })
         .then(function(results) {
-          console.log('build 3');
           var outputPath = results.directory;
 
           var expected = [];
@@ -646,7 +641,6 @@ describe('broccoli-funnel', function(){
           return builder.build();
         })
         .then(function(results) {
-          console.log('build 4');
           var outputPath = results.directory;
 
           var expected = [

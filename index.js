@@ -177,10 +177,15 @@ Funnel.prototype._build = function() {
     this.destPath = this.destPath.slice(0, -1);
   }
 
-  // TODO: this.in
-  var inputPath = this.inputPaths[0];
+  var relativeInputPath;
+  var absoluteInputPath;
+
   if (this.srcDir) {
-    inputPath = path.join(inputPath, this.srcDir);
+    relativeInputPath = this.srcDir;
+    absoluteInputPath = path.join(this.inputPaths[0], relativeInputPath);
+  } else {
+    relativeInputPath = '.';
+    absoluteInputPath = this.inputPaths[0];
   }
 
   if (this._dynamicFilesFunc) {
@@ -194,6 +199,12 @@ Funnel.prototype._build = function() {
   }
 
   var linkedRoots = false;
+  // TODO: root linking is basically a projection
+  // we already support srcDir via `chdir`.  Once we have support for globbing
+  // we will handle the `this.include` and `this.exclude` cases, after which we
+  // will never "link roots" within funnel; root linking will merely mean
+  // projecting.  This does mean that we will `this.out` to be a projection of
+  // `this.in`, so we may need to be able to modify `this.out`.
   if (this.shouldLinkRoots()) {
     linkedRoots = true;
 
@@ -211,8 +222,7 @@ Funnel.prototype._build = function() {
      * specifying `this.allowEmpty`.
      */
 
-    // TODO: this.in
-    var inputPathExists = existsSync(inputPath);
+    var inputPathExists = existsSync(absoluteInputPath);
 
     // This is specifically looking for broken symlinks.
     var outputPathExists = existsSync(this.outputPath);
@@ -240,7 +250,7 @@ Funnel.prototype._build = function() {
         rimraf.sync(this.outputPath);
         // And then symlinkOrCopy over top of it:
         // TODO: this.in.root
-        this._copy(inputPath, this.destPath);
+        this._copy(absoluteInputPath, this.destPath);
       } else if (!inputPathExists && this.allowEmpty) {
         // Can't symlink nothing, so make an empty folder at `destPath`:
         mkdirp.sync(this.destPath);
@@ -251,13 +261,13 @@ Funnel.prototype._build = function() {
 
     this._isRebuild = true;
   } else {
-    this.processFilters(inputPath);
+    this.processFilters(relativeInputPath);
   }
 
   this._debug('build, %o', {
     in: new Date() - this._buildStart + 'ms',
     linkedRoots: linkedRoots,
-    inputPath: inputPath,
+    inputPath: absoluteInputPath,
     destPath: this.destPath
   });
 };
@@ -312,11 +322,16 @@ Funnel.prototype.processFilters = function(inputPath) {
     nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
   } else {
 
-    // TODO: this.in
+    // TODO: lazily do this in fs-tree-diff
+    this.in[0]._entries = walkSync.entries(this.in[0].root);
+    this.in[0]._entries.forEach(e => {
+      e.relativePath = e.relativePath.replace(/\/$/, '');
+    });
+
     if (this._matchedWalk) {
-      entries = walkSync.entries(inputPath, this.include);
+      entries = walkSync.entries(inputPath, Object.assign({}, this.include, { fs: this.in[0] }));
     } else {
-      entries = walkSync.entries(inputPath);
+      entries = walkSync.entries(inputPath, { fs: this.in[0] });
     }
 
     entries = this._processEntries(entries);
@@ -379,7 +394,6 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
       if (relativePath === undefined) {
         relativePath = outputToInput['/' + outputRelative];
       }
-      // TODO: this.in?
       this.processFile(inputPath + '/' + relativePath, outputRelative, relativePath);
       break;
     default: throw new Error('Unknown operation: ' + operation);
@@ -463,7 +477,8 @@ Funnel.prototype._matchesPattern = function(pattern, relativePath) {
 };
 
 Funnel.prototype.processFile = function(sourcePath, destPath /*, relativePath */) {
-  this.out.symlinkSync(sourcePath, destPath);
+  let absolutePath = this.in[0].resolvePath(sourcePath);
+  this.out.symlinkSync(absolutePath, destPath);
 };
 
 Funnel.prototype._copy = function(sourcePath, destPath) {
