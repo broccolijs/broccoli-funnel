@@ -211,13 +211,13 @@ describe('broccoli-funnel', function(){
         include: [ /.png$/, /.js$/ ],
         destDir: 'foo',
 
+        // sourcePath is still absolute
+        // destPath is relative but unmapped
+        // relativePath is mapped
         processFile: function(sourcePath, destPath, relativePath) {
-          var relSourcePath = sourcePath.replace(this.inputPaths[0], '__input_path__');
-          var relDestPath = destPath.replace(this.outputPath, '__output_path__');
-
           processFileArguments.push([
-            relSourcePath,
-            relDestPath,
+            sourcePath,
+            destPath,
             relativePath
           ]);
         }
@@ -228,12 +228,12 @@ describe('broccoli-funnel', function(){
       .then(function(results) {
 
         var expected = [
-          [ '__input_path__/subdir1/subsubdir1/foo.png',
-            '__output_path__/foo/subdir1/subsubdir1/foo.png',
+          [ './subdir1/subsubdir1/foo.png',
+            'foo/subdir1/subsubdir1/foo.png',
             'subdir1/subsubdir1/foo.png'
           ],
-          [ '__input_path__/subdir1/subsubdir2/some.js',
-            '__output_path__/foo/subdir1/subsubdir2/some.js',
+          [ './subdir1/subsubdir2/some.js',
+            'foo/subdir1/subsubdir2/some.js',
             'subdir1/subsubdir2/some.js'
           ]
         ];

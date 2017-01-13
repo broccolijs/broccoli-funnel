@@ -8,6 +8,7 @@
     "before": true,
     "after": true
   },
+  "esversion": 6,
   "proto": true,
   "strict": true,
   "indent": 2,
