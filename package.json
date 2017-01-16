@@ -29,14 +29,14 @@
     "debug": "^2.2.0",
     "exists-sync": "0.0.4",
     "fast-ordered-set": "^1.0.0",
-    "fs-tree-diff": "^0.5.3",
+    "fs-tree-diff": "stefanpenner/fs-tree-diff#fs-tree-facade",
     "heimdalljs": "^0.2.0",
     "minimatch": "^3.0.0",
     "mkdirp": "^0.5.0",
     "path-posix": "^1.0.0",
     "rimraf": "^2.4.3",
     "symlink-or-copy": "^1.0.0",
-    "walk-sync": "^0.3.1"
+    "walk-sync": "hjdivad/node-walk-sync#support-user-supplied-fs"
   },
   "devDependencies": {
     "broccoli-builder": "^0.18.0",
