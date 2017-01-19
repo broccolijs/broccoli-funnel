@@ -9,12 +9,10 @@ var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
 var debug = require('debug');
 var FSTree = require('fs-tree-diff');
-var FSMergeTree = require('fs-tree-diff/lib/fs-merge-tree');
 var rimraf = require('rimraf');
 var BlankObject = require('blank-object');
 var heimdall = require('heimdalljs');
 var existsSync = require('exists-sync');
-var RSVP = require('rsvp');
 var symlinkOrCopy = require('symlink-or-copy');
 
 function ApplyPatchesSchema() {
@@ -60,7 +58,8 @@ function Funnel(inputNode, _options) {
   Plugin.call(this, [inputNode], {
     annotation: options.annotation,
     persistentOutput: true,
-    needsCache: false
+    needsCache: false,
+    fsFacade: true,
   });
 
   this._includeFileCache = makeDictionary();
@@ -152,24 +151,13 @@ Funnel.prototype._processPattern = function(pattern) {
   throw new Error('include/exclude patterns can be a RegExp, glob string, or function. You supplied `' + typeof pattern +'`.');
 };
 
+Funnel.prototype.__supportsFSFacade = true;
+
 Funnel.prototype.shouldLinkRoots = function() {
   return !this.files && !this.include && !this.exclude && !this.getDestinationPath;
 };
 
 Funnel.prototype.build = function() {
-  this.in = new FSMergeTree({
-    roots: this.inputPaths,
-  });
-  this.out = this.out || new FSTree({
-    root: this.outputPath
-  });
-
-  this.out.start();
-
-  return new RSVP.Promise(resolve => resolve(this._build())).finally(() => this.out.stop());
-};
-
-Funnel.prototype._build = function() {
   this._buildStart = new Date();
   this.destPath = path.join(this.outputPath, this.destDir);
 
