@@ -66,6 +66,9 @@ function Funnel(inputNode, _options) {
   this._destinationPathCache = makeDictionary();
   this._currentTree = new FSTree();
   this._isRebuild = false;
+  this.origInclude = options.include;
+  this.origExclude = options.exclude;
+  this.useChangeTracking = true;
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -182,6 +185,17 @@ Funnel.prototype.build = function() {
       this._includeFileCache = makeDictionary();
     }
   }
+
+  // Creating a new projection with this.in[0] as parent to have
+  // cwd/files/include and exclude set
+  const options = {
+    parent: this.in[0],
+    cwd: this.cwd,
+    files: this.files,
+    include: this.origInclude,
+    exclude: this.origExclude,
+  };
+  this._projectedIn = new FSTree(options);
 
   var linkedRoots = false;
   // TODO: root linking is basically a projection
@@ -325,6 +339,37 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   var patches = this._currentTree.calculatePatch(nextTree);
 
+  // utilize change tracking from this.in[0]
+  if (this.useChangeTracking) {
+    patches = this.in[0].changes();
+
+    if (this.destDir !== '/' || this.getDestinationPath) {
+      patches.forEach(function(entry) {
+        entry[1] = this.lookupDestinationPath(entry[1]);
+        entry[2].relativePath = this.lookupDestinationPath(entry[2].relativePath);
+      }, this);
+
+      // add destDir or DestinationPath to head of patches because it wont be in
+      // changes
+      let path = '';
+      if (this.destDir !== '/') {
+        path = this.destDir;
+      } else if (this.getDestinationPath) {
+        path = this.getDestinationPath('');
+      }
+      patches.unshift([
+        'mkdir',
+        path,
+        {
+          mode: 16877,
+          relativePath: path,
+          size: 0,
+          mtime: Date.now(),
+          checksum: null,
+        },
+      ]);
+    }
+  }
   this._currentTree = nextTree;
 
   instrumentation.stats.patches = patches.length;
@@ -377,7 +422,7 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
 
       var relativePath = outputToInput[outputRelative];
       if (relativePath === undefined) {
-        relativePath = outputToInput['/' + outputRelative];
+        relativePath = outputToInput['/' + outputRelative] || outputToInput[this.destDir + '/' + outputRelative] || '';
       }
       this.processFile(inputPath + '/' + relativePath, outputRelative, relativePath);
       break;
