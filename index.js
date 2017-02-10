@@ -337,9 +337,8 @@ Funnel.prototype.processFilters = function(inputPath) {
     nextTree = FSTree.fromEntries(entries, { sortAndExpand: true });
   }
 
-  var patches = this._currentTree.calculatePatch(nextTree);
-
   // utilize change tracking from this.in[0]
+  var patches;
   if (this.useChangeTracking) {
     patches = this.in[0].changes();
 
@@ -369,6 +368,8 @@ Funnel.prototype.processFilters = function(inputPath) {
         },
       ]);
     }
+  } else {
+    patches = this._currentTree.calculatePatch(nextTree);
   }
   this._currentTree = nextTree;
 
