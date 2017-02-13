@@ -67,9 +67,8 @@ function Funnel(inputNode, _options) {
   this._currentTree = new FSTree();
   this._isRebuild = false;
   // need the original include/exclude passed to create a projection of this.in[0]
-  this.origInclude = options.include;
-  this.origExclude = options.exclude;
-  this.useChangeTracking = true;
+  this._origInclude = options.include;
+  this._origExclude = options.exclude;
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -193,8 +192,8 @@ Funnel.prototype.build = function() {
     parent: this.in[0],
     cwd: this.cwd,
     files: this.files,
-    include: this.origInclude,
-    exclude: this.origExclude,
+    include: this._origInclude,
+    exclude: this._origExclude,
   };
   this._projectedIn = new FSTree(options);
 
@@ -325,7 +324,7 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   // utilize change tracking from this.in[0]
   var patches;
-  if (this.useChangeTracking) {
+  if (this._fsFacade) {
     patches = this.in[0].changes();
     // TODO: do we need this? if not, remove.
     entries = this.in[0].entries;
@@ -352,6 +351,7 @@ Funnel.prototype.processFilters = function(inputPath) {
       ]);
     }
   } else {
+    // TODO: Remove else block once we decided changeTracking is good to go.
     if (this.files && !this.exclude && !this.include) {
       entries = this._processPaths(this.files);
       // clone to be compatible with walkSync
