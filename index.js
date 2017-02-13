@@ -66,6 +66,7 @@ function Funnel(inputNode, _options) {
   this._destinationPathCache = makeDictionary();
   this._currentTree = new FSTree();
   this._isRebuild = false;
+  // need the original include/exclude passed to create a projection of this.in[0]
   this.origInclude = options.include;
   this.origExclude = options.exclude;
   this.useChangeTracking = true;
@@ -322,43 +323,25 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   this.outputToInputMappings = {}; // we allow users to rename files
 
-  if (this.files && !this.exclude && !this.include) {
-    entries = this._processPaths(this.files);
-    // clone to be compatible with walkSync
-    nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
-  } else {
-    if (this._matchedWalk) {
-      entries = walkSync.entries(inputPath, Object.assign({}, this.include, { fs: this.in[0] }));
-    } else {
-      entries = walkSync.entries(inputPath, { fs: this.in[0] });
-    }
-
-    entries = this._processEntries(entries);
-    nextTree = FSTree.fromEntries(entries, { sortAndExpand: true });
-  }
-
   // utilize change tracking from this.in[0]
   var patches;
   if (this.useChangeTracking) {
     patches = this.in[0].changes();
+    // TODO: do we need this? if not, remove.
+    entries = this.in[0].entries;
+
+    patches.forEach(function(entry) {
+      var outputRelativePath = this.lookupDestinationPath(entry[2].relativePath);
+      this.outputToInputMappings[outputRelativePath] = entry[2].relativePath;
+      entry[1] = this.lookupDestinationPath(entry[1]);
+      entry[2].relativePath = outputRelativePath;
+    }, this);
 
     if (this.destDir !== '/' || this.getDestinationPath) {
-      patches.forEach(function(entry) {
-        entry[1] = this.lookupDestinationPath(entry[1]);
-        entry[2].relativePath = this.lookupDestinationPath(entry[2].relativePath);
-      }, this);
-
-      // add destDir or DestinationPath to head of patches because it wont be in
-      // changes
-      let path = '';
-      if (this.destDir !== '/') {
-        path = this.destDir;
-      } else if (this.getDestinationPath) {
-        path = this.getDestinationPath('');
-      }
+      // add destination path to head of patches because it wont be in changes()
       patches.unshift([
         'mkdir',
-        path,
+        this.lookupDestinationPath(''),
         {
           mode: 16877,
           relativePath: path,
@@ -369,6 +352,21 @@ Funnel.prototype.processFilters = function(inputPath) {
       ]);
     }
   } else {
+    if (this.files && !this.exclude && !this.include) {
+      entries = this._processPaths(this.files);
+      // clone to be compatible with walkSync
+      nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
+    } else {
+      if (this._matchedWalk) {
+        entries = walkSync.entries(inputPath, Object.assign({}, this.include, { fs: this.in[0] }));
+      } else {
+        entries = walkSync.entries(inputPath, { fs: this.in[0] });
+      }
+
+      entries = this._processEntries(entries);
+      nextTree = FSTree.fromEntries(entries, { sortAndExpand: true });
+    }
+
     patches = this._currentTree.calculatePatch(nextTree);
   }
   this._currentTree = nextTree;
