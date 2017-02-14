@@ -216,7 +216,7 @@ module.exports = todoRelatedFiles;
 
 ----
 
-`exclude` *{Array of Glob Strings|Glob Strings|Functions}*
+`exclude` *{Array of Glob Strings|Glob String|Function}*
 
 One or more matcher expression (regular expression, glob string, or function). Files within the node whose names match this
 expression will _not_ be copied to the `destDir` if they otherwise would have
