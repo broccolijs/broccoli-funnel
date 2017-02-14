@@ -249,10 +249,10 @@ You can select files that match a glob expression and exclude them from copying:
 ```javascript
 var Funnel = require('broccoli-funnel');
 
-// finds all files in 'src' EXCEPT those that match /todo/
-// and adds them to a node.
+// finds all files in 'src' EXCEPT `todo.js` in any directory
+// or sub-directory and adds them to a node.
 var nobodyLikesTodosAnyway = new Funnel('src', {
-  exclude: ['todo/**/*']
+  exclude: ['**/todo.js']
 });
 
 /*
