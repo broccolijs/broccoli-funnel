@@ -327,7 +327,7 @@ module.exports = someFiles;
 This method will get called for each file, receiving the currently processing
 `relativePath` as its first argument. The value returned from
 `getDestinationPath` will be used as the destination for the new node. This is
-a very simple way to move files from one path to another (replacing the need
+a very simple way to rename files or move them from one path to another (replacing the need
 for `broccoli-file-mover` for example).
 
 The return value of this method is cached for each input file. This means that

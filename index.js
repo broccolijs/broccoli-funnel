@@ -66,6 +66,9 @@ function Funnel(inputNode, _options) {
   this._destinationPathCache = makeDictionary();
   this._currentTree = new FSTree();
   this._isRebuild = false;
+  // need the original include/exclude passed to create a projection of this.in[0]
+  this._origInclude = options.include;
+  this._origExclude = options.exclude;
 
   var keys = Object.keys(options || {});
   for (var i = 0, l = keys.length; i < l; i++) {
@@ -182,6 +185,18 @@ Funnel.prototype.build = function() {
       this._includeFileCache = makeDictionary();
     }
   }
+
+  // Creating a new projection with this.in[0] as parent to have
+  // cwd/files/include and exclude set
+  const options = {
+    parent: this.in[0],
+    cwd: this.cwd,
+    files: this.files,
+    include: this._origInclude,
+    exclude: this._origExclude,
+    srcTree: this.in[0].srcTree,
+  };
+  this._projectedIn = new FSTree(options);
 
   var linkedRoots = false;
   // TODO: root linking is basically a projection
@@ -308,23 +323,54 @@ Funnel.prototype.processFilters = function(inputPath) {
 
   this.outputToInputMappings = {}; // we allow users to rename files
 
-  if (this.files && !this.exclude && !this.include) {
-    entries = this._processPaths(this.files);
-    // clone to be compatible with walkSync
-    nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
+  // utilize change tracking from this.in[0]
+  var patches;
+  if (this._fsFacade) {
+    patches = this.in[0].changes();
+    // TODO: do we need this? if not, remove.
+    entries = this.in[0].entries;
+
+    patches.forEach(function(entry) {
+      var outputRelativePath = this.lookupDestinationPath(entry[2].relativePath);
+      this.outputToInputMappings[outputRelativePath] = entry[2].relativePath;
+      entry[1] = this.lookupDestinationPath(entry[1]);
+      entry[2].relativePath = outputRelativePath;
+    }, this);
+
+    if (this.destDir !== '/' || this.getDestinationPath) {
+      // add destination path to head of patches because it wont be in changes()
+      let destDir = this.lookupDestinationPath('');
+      patches.unshift([
+        'mkdirp',
+        destDir,
+        {
+          mode: 16877,
+          relativePath: destDir,
+          size: 0,
+          mtime: Date.now(),
+          checksum: null,
+        },
+      ]);
+    }
   } else {
-    if (this._matchedWalk) {
-      entries = walkSync.entries(inputPath, Object.assign({}, this.include, { fs: this.in[0] }));
+    // TODO: Remove else block once we decided changeTracking is good to go.
+    if (this.files && !this.exclude && !this.include) {
+      entries = this._processPaths(this.files);
+      // clone to be compatible with walkSync
+      nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
     } else {
-      entries = walkSync.entries(inputPath, { fs: this.in[0] });
+      if (this._matchedWalk) {
+        entries = walkSync.entries(inputPath, Object.assign({}, this.include, { fs: this.in[0] }));
+      } else {
+        entries = walkSync.entries(inputPath, { fs: this.in[0] });
+      }
+
+      entries = this._processEntries(entries);
+      nextTree = FSTree.fromEntries(entries, { sortAndExpand: true });
     }
 
-    entries = this._processEntries(entries);
-    nextTree = FSTree.fromEntries(entries, { sortAndExpand: true });
+    patches = this._currentTree.calculatePatch(nextTree);
   }
-
-  var patches = this._currentTree.calculatePatch(nextTree);
-
   this._currentTree = nextTree;
 
   instrumentation.stats.patches = patches.length;
@@ -367,6 +413,10 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
       stats.mkdir++;
       this.out.mkdirSync(outputRelative);
       break;
+    case 'mkdirp'  :
+      stats.mkdirp++;
+      this.out.mkdirpSync(outputRelative);
+      break;
     case 'change':
       stats.change++;
       /* falls through */
@@ -377,7 +427,7 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
 
       var relativePath = outputToInput[outputRelative];
       if (relativePath === undefined) {
-        relativePath = outputToInput['/' + outputRelative];
+        relativePath = outputToInput['/' + outputRelative] || outputToInput[this.destDir + '/' + outputRelative] || '';
       }
       this.processFile(inputPath + '/' + relativePath, outputRelative, relativePath);
       break;
