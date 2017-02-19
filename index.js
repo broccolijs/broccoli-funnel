@@ -194,6 +194,7 @@ Funnel.prototype.build = function() {
     files: this.files,
     include: this._origInclude,
     exclude: this._origExclude,
+    srcTree: this.in[0].srcTree,
   };
   this._projectedIn = new FSTree(options);
 
@@ -338,12 +339,13 @@ Funnel.prototype.processFilters = function(inputPath) {
 
     if (this.destDir !== '/' || this.getDestinationPath) {
       // add destination path to head of patches because it wont be in changes()
+      let destDir = this.lookupDestinationPath('');
       patches.unshift([
-        'mkdir',
-        this.lookupDestinationPath(''),
+        'mkdirp',
+        destDir,
         {
           mode: 16877,
-          relativePath: path,
+          relativePath: destDir,
           size: 0,
           mtime: Date.now(),
           checksum: null,
@@ -410,6 +412,10 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
     case 'mkdir'  :
       stats.mkdir++;
       this.out.mkdirSync(outputRelative);
+      break;
+    case 'mkdirp'  :
+      stats.mkdirp++;
+      this.out.mkdirpSync(outputRelative);
       break;
     case 'change':
       stats.change++;
