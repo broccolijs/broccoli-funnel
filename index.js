@@ -3,7 +3,6 @@
 var fs = require('fs');
 var path = require('path-posix');
 var mkdirp = require('mkdirp');
-var walkSync = require('walk-sync');
 var Minimatch = require('minimatch').Minimatch;
 var arrayEqual = require('array-equal');
 var Plugin = require('broccoli-plugin');
@@ -304,12 +303,12 @@ Funnel.prototype._processEntries = function(entries) {
 };
 
 Funnel.prototype._processPatches = function(patches) {
-  var dirLists = [];
-  var i = 0
+  let dirLists = [];
+  let i = 0;
 
   if (this.destDir !== '/' && this.destDir !== '.') {
     // add destination path to head of patches because it wont be in changes()
-    var destDir = this.destDir[0] === '/' ? this.destDir.substring(1) : this.destDir;
+    let destDir = this.destDir[0] === '/' ? this.destDir.substring(1) : this.destDir;
     patches.unshift([
       'mkdirp',
       destDir,
@@ -326,9 +325,9 @@ Funnel.prototype._processPatches = function(patches) {
   }
 
   for (i = i; i < patches.length; ++i) {
-    var patch = patches[i];
+    let patch = patches[i];
 
-    var outputRelativePath = this.lookupDestinationPath(patch[2].relativePath, patch[2].mode);
+    const outputRelativePath = this.lookupDestinationPath(patch[2].relativePath, patch[2].mode);
     this.outputToInputMappings[outputRelativePath] = patch[2].relativePath;
     patch[1] = this.lookupDestinationPath(patch[1], patch[2].mode);
     patch[2].relativePath = outputRelativePath;
@@ -344,7 +343,7 @@ Funnel.prototype._processPatches = function(patches) {
            we need to mkdirp c/b
     */
     if (patch[0] === 'create') {
-      var pathToFile = path.dirname(patch[1]);
+      const pathToFile = path.dirname(patch[1]);
       if (pathToFile !== '.' && dirLists.indexOf(pathToFile) === -1) {
         dirLists.push(`${pathToFile}/`);
         patches.splice.apply(patches, [i,0].concat([[
@@ -383,7 +382,6 @@ Funnel.prototype.processFilters = function(inputPath) {
   var nextTree;
 
   var instrumentation = heimdall.start('derivePatches - broccoli-funnel');
-  var entries;
 
   this.outputToInputMappings = {}; // we allow users to rename files
 

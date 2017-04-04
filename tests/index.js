@@ -940,7 +940,7 @@ describe('broccoli-funnel', function(){
     it('returns the input path if no getDestinationPath method is defined', function() {
       var relativePath = 'foo/bar/baz';
 
-      expect(node.lookupDestinationPath(relativePath)).to.be.equal(relativePath);
+      expect(node.lookupDestinationPath(relativePath, 33188)).to.be.equal(relativePath);
     });
 
     it('returns the output of getDestinationPath method if defined', function() {
@@ -950,8 +950,7 @@ describe('broccoli-funnel', function(){
       node.getDestinationPath = function() {
         return expected;
       };
-
-      expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(node.lookupDestinationPath(relativePath, 33188)).to.be.equal(expected);
     });
 
     it('only calls getDestinationPath once and caches result', function() {
@@ -966,12 +965,12 @@ describe('broccoli-funnel', function(){
         return expected;
       };
 
-      expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(node.lookupDestinationPath(relativePath, 33188)).to.be.equal(expected);
       expect(getDestPathCalled).to.be.equal(1);
 
       getDestPathValue = 'some/other/thing';
 
-      expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
+      expect(node.lookupDestinationPath(relativePath, 33188)).to.be.equal(expected);
       expect(getDestPathCalled).to.be.equal(1);
     });
   });
