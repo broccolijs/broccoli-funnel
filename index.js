@@ -53,7 +53,6 @@ Funnel.prototype = Object.create(Plugin.prototype);
 Funnel.prototype.constructor = Funnel;
 function Funnel(inputNode, _options) {
   if (!(this instanceof Funnel)) { return new Funnel(inputNode, _options); }
-
   var options = _options || {};
   Plugin.call(this, [inputNode], {
     annotation: options.annotation,
@@ -186,18 +185,6 @@ Funnel.prototype.build = function() {
     }
   }
 
-  // Creating a new projection with this.in[0] as parent to have
-  // cwd/files/include and exclude set
-  const options = {
-    parent: this.in[0],
-    cwd: this.cwd,
-    files: this.files,
-    include: this._origInclude,
-    exclude: this._origExclude,
-    srcTree: this.in[0].srcTree,
-  };
-  this._projectedIn = new FSTree(options);
-
   var linkedRoots = false;
   // TODO: root linking is basically a projection
   // we already support srcDir via `chdir`.  Once we have support for globbing
@@ -266,6 +253,20 @@ Funnel.prototype.build = function() {
 
     this._isRebuild = true;
   } else {
+    // Creating a new projection with this.in[0] as parent to have
+    // cwd/files/include and exclude set
+    if (this.cwd || this.files || this._origInclude || this._origExclude) {
+      const options = {
+        parent: this.in[0],
+        cwd: this.cwd,
+        files: this.files,
+        include: this._origInclude,
+        exclude: this._origExclude,
+        srcTree: this.in[0].srcTree,
+      };
+
+      this._projectedIn = new FSTree(options);
+    }
     this.processFilters('.');
   }
 
@@ -302,6 +303,69 @@ Funnel.prototype._processEntries = function(entries) {
   }, this);
 };
 
+Funnel.prototype._processPatches = function(patches) {
+  var dirLists = [];
+  var i = 0
+
+  if (this.destDir !== '/' && this.destDir !== '.') {
+    // add destination path to head of patches because it wont be in changes()
+    var destDir = this.destDir[0] === '/' ? this.destDir.substring(1) : this.destDir;
+    patches.unshift([
+      'mkdirp',
+      destDir,
+      {
+        mode: 16877,
+        relativePath: destDir,
+        size: 0,
+        mtime: Date.now(),
+        checksum: null,
+      },
+    ]);
+    dirLists.push(destDir);
+    i++;
+  }
+
+  for (i = i; i < patches.length; ++i) {
+    var patch = patches[i];
+
+    var outputRelativePath = this.lookupDestinationPath(patch[2].relativePath, patch[2].mode);
+    this.outputToInputMappings[outputRelativePath] = patch[2].relativePath;
+    patch[1] = this.lookupDestinationPath(patch[1], patch[2].mode);
+    patch[2].relativePath = outputRelativePath;
+
+    if (patch[0] === 'mkdir' || patch[0] === 'mkdirp') {
+      dirLists.push(patch[1]);
+    }
+
+    // TODO: Add tests for this
+    /* Here, we are adding entries to mkdirp paths that lookupDestinationPath adds to the entry.
+       eg. relativePath = a.js
+           this.lookupDestinationPath(relativePath) returns c/b/a.js
+           we need to mkdirp c/b
+    */
+    if (patch[0] === 'create') {
+      var pathToFile = path.dirname(patch[1]);
+      if (pathToFile !== '.' && dirLists.indexOf(pathToFile) === -1) {
+        dirLists.push(`${pathToFile}/`);
+        patches.splice.apply(patches, [i,0].concat([[
+          'mkdirp',
+          `${pathToFile}/`,
+          {
+            mode: 16877,
+            relativePath: `${pathToFile}/`,
+            size: 0,
+            mtime: Date.now(),
+            checksum: null,
+          },
+        ]]));
+        i++;
+      }
+    }
+  }
+
+  return patches;
+};
+
 Funnel.prototype._processPaths  = function(paths) {
   return paths.
     slice(0).
@@ -318,63 +382,21 @@ Funnel.prototype._processPaths  = function(paths) {
 Funnel.prototype.processFilters = function(inputPath) {
   var nextTree;
 
-  var instrumentation = heimdall.start('derivePatches');
+  var instrumentation = heimdall.start('derivePatches - broccoli-funnel');
   var entries;
 
   this.outputToInputMappings = {}; // we allow users to rename files
 
   // utilize change tracking from this.in[0]
-  var patches;
-  if (this._fsFacade) {
-    patches = this.in[0].changes();
-    // TODO: do we need this? if not, remove.
-    entries = this.in[0].entries;
-
-    patches.forEach(function(entry) {
-      var outputRelativePath = this.lookupDestinationPath(entry[2].relativePath);
-      this.outputToInputMappings[outputRelativePath] = entry[2].relativePath;
-      entry[1] = this.lookupDestinationPath(entry[1]);
-      entry[2].relativePath = outputRelativePath;
-    }, this);
-
-    if (this.destDir !== '/' || this.getDestinationPath) {
-      // add destination path to head of patches because it wont be in changes()
-      let destDir = this.lookupDestinationPath('');
-      patches.unshift([
-        'mkdirp',
-        destDir,
-        {
-          mode: 16877,
-          relativePath: destDir,
-          size: 0,
-          mtime: Date.now(),
-          checksum: null,
-        },
-      ]);
-    }
-  } else {
-    // TODO: Remove else block once we decided changeTracking is good to go.
-    if (this.files && !this.exclude && !this.include) {
-      entries = this._processPaths(this.files);
-      // clone to be compatible with walkSync
-      nextTree = FSTree.fromPaths(entries, { sortAndExpand: true });
-    } else {
-      if (this._matchedWalk) {
-        entries = walkSync.entries(inputPath, Object.assign({}, this.include, { fs: this.in[0] }));
-      } else {
-        entries = walkSync.entries(inputPath, { fs: this.in[0] });
-      }
-
-      entries = this._processEntries(entries);
-      nextTree = FSTree.fromEntries(entries, { sortAndExpand: true });
-    }
-
-    patches = this._currentTree.calculatePatch(nextTree);
-  }
+  var patches = this._processPatches(this.in[0].changes());
   this._currentTree = nextTree;
 
   instrumentation.stats.patches = patches.length;
-  instrumentation.stats.entries = entries.length;
+  instrumentation.stats.entries = this.in[0].entries.length;
+  instrumentation.stats._patches = patches;
+  instrumentation.stats.srcTree = this.in[0].srcTree;
+  instrumentation.stats.inroot = this.in[0].root;
+  instrumentation.stats.outroot = this.out.root;
 
   instrumentation.stop();
 
@@ -435,13 +457,13 @@ Funnel.prototype._applyPatch = function applyPatch(entry, inputPath, stats) {
   }
 };
 
-Funnel.prototype.lookupDestinationPath = function(relativePath) {
+Funnel.prototype.lookupDestinationPath = function(relativePath, mode) {
   if (this._destinationPathCache[relativePath] !== undefined) {
     return this._destinationPathCache[relativePath];
   }
 
   // the destDir is absolute to prevent '..' above the output dir
-  if (this.getDestinationPath) {
+  if (this.getDestinationPath && mode === 33188) {
     return this._destinationPathCache[relativePath] = ensureRelative(path.join(this.destDir, this.getDestinationPath(relativePath)));
   }
 
