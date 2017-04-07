@@ -336,7 +336,6 @@ Funnel.prototype._processPatches = function(patches) {
       dirLists.push(patch[1]);
     }
 
-    // TODO: Add tests for this
     /* Here, we are adding entries to mkdirp paths that lookupDestinationPath adds to the entry.
        eg. relativePath = a.js
            this.lookupDestinationPath(relativePath) returns c/b/a.js
@@ -379,14 +378,14 @@ Funnel.prototype._processPaths  = function(paths) {
 // TODO: inputPath is always '.' now because if we have srcDir this is handled
 // via this.in[0] being a projection
 Funnel.prototype.processFilters = function(inputPath) {
-  var nextTree;
-
-  var instrumentation = heimdall.start('derivePatches - broccoli-funnel');
+  let nextTree;
+  let patches;
+  let instrumentation = heimdall.start('derivePatches - broccoli-funnel');
 
   this.outputToInputMappings = {}; // we allow users to rename files
 
   // utilize change tracking from this.in[0]
-  var patches = this._processPatches(this.in[0].changes());
+  patches = this._processPatches(this.in[0].changes());
   this._currentTree = nextTree;
 
   instrumentation.stats.patches = patches.length;
