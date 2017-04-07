@@ -80,6 +80,24 @@ describe('broccoli-funnel', function(){
           expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
         });
     });
+
+    it.only('correctly builds when getDestinationPath returns an additional directory', function(){
+      var inputPath = FIXTURE_INPUT + '/dir1';
+      var node = new Funnel(FIXTURE_INPUT + '/lib', {
+        include: ['*.js']
+      });
+      var expected = 'newDir/';
+
+      node.getDestinationPath = function(relPath) {
+        return expected + relPath;
+      };
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(function(results) {
+          expect(walkSync(results.directory, ['**/*.js'])).to.eql(['newDir/main.js', 'newDir/utils.js']);
+        });
+    });
   });
 
   describe('linkRoots', function() {
