@@ -260,7 +260,7 @@ describe('broccoli-funnel', function(){
         var outputPath = results.directory;
 
         expect(walkSync(outputPath)).to.eql([
-          // only folders exist
+          // folders exist
           'foo/',
           'foo/subdir1/',
           'foo/subdir1/subsubdir1/',
@@ -286,7 +286,7 @@ describe('broccoli-funnel', function(){
         var outputPath = results.directory;
 
         expect(walkSync(outputPath)).to.eql([
-          // only dir exist
+          // dir exist
           'foo/',
           'foo/subdir1/',
           'foo/subdir1/subsubdir1/',
@@ -556,7 +556,7 @@ describe('broccoli-funnel', function(){
             files: ['anything'],
             include: ['*.txt']
           });
-        }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+        }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can have one or the other');
       });
 
       it('so error if `files` and `exclude` are set', function() {
@@ -567,7 +567,7 @@ describe('broccoli-funnel', function(){
             files: function() { return ['anything']; },
             exclude: ['*.md']
           });
-        }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+        }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can have one or the other');
       });
     });
 
@@ -803,11 +803,31 @@ describe('broccoli-funnel', function(){
       });
     });
 
-    it('combined filtering', function() {
+    it('combined filtering (regexp)', function() {
       var inputPath = FIXTURE_INPUT + '/dir1';
       var node = new Funnel(inputPath, {
         exclude: [ /.png$/, /.js$/ ],
         include: [ /.txt$/ ]
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+      .then(function(results) {
+        var outputPath = results.directory;
+
+        var expected = [
+          'root-file.txt',
+        ];
+
+        expect(walkSync(outputPath)).to.eql(expected);
+      });
+    });
+
+    it('combined filtering (globs)', function() {
+      var inputPath = FIXTURE_INPUT + '/dir1';
+      var node = new Funnel(inputPath, {
+        exclude: [ '**/*.png', '**/*.js' ],
+        include: [ '**/*.txt' ]
       });
 
       builder = new broccoli.Builder(node);
@@ -883,6 +903,80 @@ describe('broccoli-funnel', function(){
     });
   });
 
+  describe('canMatchWalk', function() {
+    var inputPath = FIXTURE_INPUT + '/dir1';
+
+    describe('include', function() {
+      it('is false with no include', function() {
+        var node = new Funnel(inputPath);
+        expect(node.canMatchWalk()).to.eql(false);
+      });
+
+      it('is true with string include', function() {
+        var node = new Funnel(inputPath, {
+          include: [ 'foo' ]
+        });
+        expect(node.canMatchWalk()).to.eql(true);
+      });
+
+      it('is false with regexp include', function() {
+        var node = new Funnel(inputPath, {
+          include: [ /foo/ ]
+        });
+        expect(node.canMatchWalk()).to.eql(false);
+      });
+
+      it('is false with string + regexp include', function() {
+        var node = new Funnel(inputPath, {
+          include: [ 'foo', /foo/ ]
+        });
+        expect(node.canMatchWalk()).to.eql(false);
+      });
+
+      it('is true with string + string include', function() {
+        var node = new Funnel(inputPath, {
+          include: [ 'foo', 'bar' ]
+        });
+        expect(node.canMatchWalk()).to.eql(true);
+      });
+    });
+
+    describe('exclude', function() {
+      it('is false with no exclude', function() {
+        var node = new Funnel(inputPath);
+        expect(node.canMatchWalk()).to.eql(false);
+      });
+
+      it('is true with string exclude', function() {
+        var node = new Funnel(inputPath, {
+          exclude: [ 'foo' ]
+        });
+        expect(node.canMatchWalk()).to.eql(true);
+      });
+
+      it('is false with regexp exclude', function() {
+        var node = new Funnel(inputPath, {
+          exclude: [ /foo/ ]
+        });
+        expect(node.canMatchWalk()).to.eql(false);
+      });
+
+      it('is false with string + regexp exclude', function() {
+        var node = new Funnel(inputPath, {
+          exclude: [ 'foo', /foo/ ]
+        });
+        expect(node.canMatchWalk()).to.eql(false);
+      });
+
+      it('is true with string +  string exclude', function() {
+        var node = new Funnel(inputPath, {
+          exclude: [ 'foo', 'bar' ]
+        });
+        expect(node.canMatchWalk()).to.eql(true);
+      });
+    });
+  });
+
   describe('includeFile', function() {
     var node;
 
@@ -954,7 +1048,7 @@ describe('broccoli-funnel', function(){
       expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
     });
 
-    it('only calls getDestinationPath once and caches result', function() {
+    it('calls getDestinationPath once and caches result', function() {
       var relativePath = 'foo/bar/baz';
       var expected = 'blah/blah/blah';
       var getDestPathValue = expected;

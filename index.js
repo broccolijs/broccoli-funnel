@@ -85,7 +85,7 @@ function Funnel(inputNode, _options) {
   }
 
   if ((this.files || this._dynamicFilesFunc) && (this.include || this.exclude)) {
-    throw new Error('Cannot pass files option (array or function) and a include/exlude filter. You can only have one or the other');
+    throw new Error('Cannot pass files option (array or function) and a include/exlude filter. You can have one or the other');
   }
 
   if (this.files) {
@@ -99,13 +99,35 @@ function Funnel(inputNode, _options) {
   this._setupFilter('include');
   this._setupFilter('exclude');
 
-  this._matchedWalk = this.include && this.include.filter(function(a) {
-    return a instanceof Minimatch;
-  }).length === this.include.length;
+  this._matchedWalk = this.canMatchWalk();
 
   this._instantiatedStack = (new Error()).stack;
   this._buildStart = undefined;
 }
+
+function isMinimatch(x) {
+  return x instanceof Minimatch;
+}
+Funnel.prototype.canMatchWalk = function() {
+  var include = this.include;
+  var exclude = this.exclude;
+
+  if (!include && !exclude) { return false; }
+
+  var includeIsOk = true;
+
+  if (include) {
+    includeIsOk = include.filter(isMinimatch).length === include.length;
+  }
+
+  var excludeIsOk = true;
+
+  if (exclude) {
+    excludeIsOk = exclude.filter(isMinimatch).length === exclude.length;
+  }
+
+  return includeIsOk && excludeIsOk;
+};
 
 Funnel.prototype._debugName = function() {
   return this.description || this._annotation || this.name || this.constructor.name;
@@ -295,7 +317,7 @@ Funnel.prototype.processFilters = function(inputPath) {
   } else {
 
     if (this._matchedWalk) {
-      entries = walkSync.entries(inputPath, this.include);
+      entries = walkSync.entries(inputPath, { globs: this.include, ignore: this.exclude });
     } else {
       entries = walkSync.entries(inputPath);
     }
@@ -402,6 +424,9 @@ Funnel.prototype.includeFile = function(relativePath) {
     return includeFileCache[relativePath] = this.files.indexOf(relativePath) > -1;
   }
 
+  if (this._matchedWalk) {
+    return true;
+  }
   // Check exclude patterns
   if (this.exclude) {
     for (i = 0, l = this.exclude.length; i < l; i++) {
