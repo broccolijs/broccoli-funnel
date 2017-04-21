@@ -30,7 +30,7 @@
     "exists-sync": "0.0.4",
     "fast-ordered-set": "^1.0.0",
     "fs-tree-diff": "^0.5.3",
-    "heimdalljs": "^0.2.0",
+    "heimdalljs": "0.2.1",
     "minimatch": "^3.0.0",
     "mkdirp": "^0.5.0",
     "path-posix": "^1.0.0",
