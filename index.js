@@ -58,7 +58,8 @@ function Funnel(inputNode, _options) {
   Plugin.call(this, [inputNode], {
     annotation: options.annotation,
     persistentOutput: true,
-    needsCache: false
+    needsCache: false,
+    sideEffectFree: true,
   });
 
   this._includeFileCache = makeDictionary();
@@ -201,6 +202,11 @@ Funnel.prototype.build = function() {
 
   var linkedRoots = false;
   if (this.shouldLinkRoots()) {
+    // because we are not scanning the interior of the input path
+    // we cannot know if they have changed or not, we must notify
+    // that we have been revised
+    this.revised();
+
     linkedRoots = true;
 
     /**
@@ -327,6 +333,9 @@ Funnel.prototype.processFilters = function(inputPath) {
   }
 
   var patches = this._currentTree.calculatePatch(nextTree);
+  if (patches.length > 0) {
+    this.revised();
+  }
 
   this._currentTree = nextTree;
 
