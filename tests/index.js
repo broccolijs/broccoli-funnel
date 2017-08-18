@@ -1,26 +1,26 @@
 'use strict';
 
-var fs = require('fs-extra');
-var path = require('path');
-var RSVP = require('rsvp');
-var expect = require('chai').expect;
-var walkSync = require('walk-sync');
-var broccoli = require('broccoli-builder');
-var rimraf = RSVP.denodeify(require('rimraf'));
-var fixturify = require('fixturify');
+const fs = require('fs-extra');
+const path = require('path');
+const RSVP = require('rsvp');
+const expect = require('chai').expect;
+const walkSync = require('walk-sync');
+const broccoli = require('broccoli-builder');
+const rimraf = RSVP.denodeify(require('rimraf'));
+const fixturify = require('fixturify');
 
-require('mocha-jshint')({
-  paths: [
-    'tests/index.js',
-    'index.js'
-  ]
+require('mocha-eslint')([
+  'tests/index.js',
+  'index.js',
+], {
+  timeout: 5000,
 });
 
-var Funnel = require('..');
+const Funnel = require('..');
 
-describe('broccoli-funnel', function(){
-  var builder;
-  var FIXTURE_INPUT = path.resolve(__dirname, '../tmp/INPUT');
+describe('broccoli-funnel', function() {
+  let builder;
+  const FIXTURE_INPUT = path.resolve(__dirname, '../tmp/INPUT');
 
   beforeEach(function() {
     fs.mkdirpSync(FIXTURE_INPUT);
@@ -28,24 +28,24 @@ describe('broccoli-funnel', function(){
       dir1: {
         subdir1: {
           subsubdir1: {
-            'foo.png': ''
+            'foo.png': '',
           },
           subsubdir2: {
-            'some.js': ''
-          }
+            'some.js': '',
+          },
         },
         subdir2: {
-          'bar.css': ''
+          'bar.css': '',
         },
-        'root-file.txt': ''
+        'root-file.txt': '',
       },
       lib: {
         utils: {
-          'foo.js': ''
+          'foo.js': '',
         },
         'utils.js': '',
-        'main.js': ''
-      }
+        'main.js': '',
+      },
     });
   });
 
@@ -58,24 +58,24 @@ describe('broccoli-funnel', function(){
 
   describe('rebuilding', function() {
     it('correctly rebuilds', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(FIXTURE_INPUT + '/dir1', {
-        include: ['**/*.js']
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(`${FIXTURE_INPUT}/dir1`, {
+        include: ['**/*.js'],
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
 
-          var mutatedFile = inputPath + '/subdir1/subsubdir2/some.js';
+          let mutatedFile = `${inputPath}/subdir1/subsubdir2/some.js`;
           fs.writeFileSync(mutatedFile, fs.readFileSync(mutatedFile));
           return builder.build();
         })
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
         });
@@ -84,102 +84,117 @@ describe('broccoli-funnel', function(){
 
   describe('linkRoots', function() {
     it('links input to output if possible', function() {
-      var node = new Funnel(FIXTURE_INPUT);
+      let node = new Funnel(FIXTURE_INPUT);
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
+        .then(results => {
           expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
         });
     });
 
     it('links input to destDir if possible', function() {
-      var node = new Funnel(FIXTURE_INPUT, {
-        destDir: 'output'
+      let node = new Funnel(FIXTURE_INPUT, {
+        destDir: 'output',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          expect(fs.lstatSync(results.directory + '/output').isSymbolicLink()).to.eql(true);
-          expect(fs.realpathSync(results.directory + '/output')).to.eql(FIXTURE_INPUT);
+        .then(results => {
+          expect(fs.lstatSync(`${results.directory}/output`).isSymbolicLink()).to.eql(true);
+          expect(fs.realpathSync(`${results.directory}/output`)).to.eql(FIXTURE_INPUT);
         });
     });
 
     it('links srcDir to output if possible', function() {
-      var node = new Funnel(FIXTURE_INPUT, {
-        srcDir: 'dir1'
+      let node = new Funnel(FIXTURE_INPUT, {
+        srcDir: 'dir1',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
+        .then(results => {
           expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
           expect(fs.realpathSync(results.directory)).to.eql(path.resolve(FIXTURE_INPUT, 'dir1'));
         });
     });
 
     it('links srcDir to destDir if possible', function() {
-      var node = new Funnel(FIXTURE_INPUT, {
+      let node = new Funnel(FIXTURE_INPUT, {
         srcDir: 'lib',
-        destDir: 'output'
+        destDir: 'output',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          expect(fs.lstatSync(results.directory + '/output').isSymbolicLink()).to.eql(true);
-          expect(fs.realpathSync(results.directory + '/output')).to.eql(path.resolve(FIXTURE_INPUT, 'lib'));
+        .then(results => {
+          expect(fs.lstatSync(`${results.directory}/output`).isSymbolicLink()).to.eql(true);
+          expect(fs.realpathSync(`${results.directory}/output`)).to.eql(path.resolve(FIXTURE_INPUT, 'lib'));
         });
     });
 
     it('stable on idempotent rebuild', function() {
-      var node = new Funnel(FIXTURE_INPUT + '/dir1');
-      var stat;
+      let node = new Funnel(`${FIXTURE_INPUT}/dir1`);
+      let stat;
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
+        .then(results => {
           stat = fs.lstatSync(results.directory);
           return builder.build();
         })
-        .then(function(results) {
-          expect(fs.lstatSync(results.directory)).to.eql(stat);
+        .then(results => {
+          let newStat = fs.lstatSync(results.directory);
+
+          // having deep equal assertion here causes intermittent failures on CI
+          // access time varies between runs
+          expect(newStat.dev).to.eql(stat.dev);
+          expect(newStat.mode).to.eql(stat.mode);
+          expect(newStat.nlink).to.eql(stat.nlink);
+          expect(newStat.uid).to.eql(stat.uid);
+          expect(newStat.gid).to.eql(stat.gid);
+          expect(newStat.rdev).to.eql(stat.rdev);
+          expect(newStat.blksize).to.eql(stat.blksize);
+          expect(newStat.ino).to.eql(stat.ino);
+          expect(newStat.size).to.eql(stat.size);
+          expect(newStat.blocks).to.eql(stat.blocks);
+          expect(newStat.birthtime).to.eql(stat.birthtime);
+          expect(newStat.ctime).to.eql(stat.ctime);
         });
     });
 
     it('properly supports relative path input node', function() {
-      var assertions = 0;
+      let assertions = 0;
 
-      var node = new Funnel('../broccoli-funnel', {
-        destDir: 'foo'
+      let node = new Funnel('../broccoli-funnel', {
+        destDir: 'foo',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .catch(function(error) {
+        .catch(() => {
           assertions++;
         })
-        .then(function() {
+        .then(() => {
           expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
         });
     });
 
     it('throws error on unspecified allowEmpty', function() {
-      var assertions = 0;
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
+      let assertions = 0;
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
         srcDir: 'subdir3',
-        destDir: 'subdir3'
+        destDir: 'subdir3',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .catch(function(error) {
+        .catch(error => {
           expect(error.stack.toString()).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
           assertions++;
         })
-        .then(function() {
+        .then(() => {
           expect(assertions).to.equal(1, 'Build threw an error.');
         });
     });
@@ -187,122 +202,121 @@ describe('broccoli-funnel', function(){
 
   describe('processFile', function() {
     it('is not called when simply linking roots (aka no include/exclude)', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        processFile: function() {
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        processFile() {
           throw new Error('should never be called');
-        }
+        },
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
-        var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-        expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
-      });
+          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+        });
     });
 
     it('is called for each included file', function() {
-      var processFileArguments = [];
+      let processFileArguments = [];
 
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        include: [ /.png$/, /.js$/ ],
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        include: [/.png$/, /.js$/],
         destDir: 'foo',
 
-        processFile: function(sourcePath, destPath, relativePath) {
-          var relSourcePath = sourcePath.replace(this.inputPaths[0], '__input_path__');
-          var relDestPath = destPath.replace(this.outputPath, '__output_path__');
+        processFile(sourcePath, destPath, relativePath) {
+          let relSourcePath = sourcePath.replace(this.inputPaths[0], '__input_path__');
+          let relDestPath = destPath.replace(this.outputPath, '__output_path__');
 
           processFileArguments.push([
             relSourcePath,
             relDestPath,
-            relativePath
+            relativePath,
           ]);
-        }
+        },
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
+        .then(() => {
+          let expected = [
+            ['__input_path__/subdir1/subsubdir1/foo.png',
+              '__output_path__/foo/subdir1/subsubdir1/foo.png',
+              'subdir1/subsubdir1/foo.png',
+            ],
+            ['__input_path__/subdir1/subsubdir2/some.js',
+              '__output_path__/foo/subdir1/subsubdir2/some.js',
+              'subdir1/subsubdir2/some.js',
+            ],
+          ];
 
-        var expected = [
-          [ '__input_path__/subdir1/subsubdir1/foo.png',
-            '__output_path__/foo/subdir1/subsubdir1/foo.png',
-            'subdir1/subsubdir1/foo.png'
-          ],
-          [ '__input_path__/subdir1/subsubdir2/some.js',
-            '__output_path__/foo/subdir1/subsubdir2/some.js',
-            'subdir1/subsubdir2/some.js'
-          ]
-        ];
-
-        expect(processFileArguments).to.eql(expected);
-      });
+          expect(processFileArguments).to.eql(expected);
+        });
     });
 
     it('is responsible for generating files in the destDir', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
 
-      var node = new Funnel(inputPath, {
-        include: [ /.png$/, /.js$/ ],
+      let node = new Funnel(inputPath, {
+        include: [/.png$/, /.js$/],
         destDir: 'foo',
 
-        processFile: function() {
+        processFile() {
           /* do nothing */
-        }
+        },
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
-        var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-        expect(walkSync(outputPath)).to.eql([
-          // folders exist
-          'foo/',
-          'foo/subdir1/',
-          'foo/subdir1/subsubdir1/',
-          'foo/subdir1/subsubdir2/'
-        ]);
-      });
+          expect(walkSync(outputPath)).to.eql([
+            // folders exist
+            'foo/',
+            'foo/subdir1/',
+            'foo/subdir1/subsubdir1/',
+            'foo/subdir1/subsubdir2/',
+          ]);
+        });
     });
 
     it('works with mixed glob and RegExp includes', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        include: [ '**/*.png', /.js$/ ],
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        include: ['**/*.png', /.js$/],
         destDir: 'foo',
 
-        processFile: function() {
+        processFile() {
           /* do nothing */
-        }
+        },
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
-        var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-        expect(walkSync(outputPath)).to.eql([
-          // dir exist
-          'foo/',
-          'foo/subdir1/',
-          'foo/subdir1/subsubdir1/',
-          'foo/subdir1/subsubdir2/'
-        ]);
-      });
+          expect(walkSync(outputPath)).to.eql([
+            // dir exist
+            'foo/',
+            'foo/subdir1/',
+            'foo/subdir1/subsubdir1/',
+            'foo/subdir1/subsubdir2/',
+          ]);
+        });
     });
 
     it('correctly chooses _matchedWalk scenario', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node;
-      node = new Funnel(inputPath, { include: [ '**/*.png', /.js$/ ] });
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node;
+      node = new Funnel(inputPath, { include: ['**/*.png', /.js$/] });
 
       expect(node._matchedWalk).to.eql(false);
 
-      node = new Funnel(inputPath, { include: [ '**/*.png', '**/*.js' ] });
+      node = new Funnel(inputPath, { include: ['**/*.png', '**/*.js'] });
 
       expect(node._matchedWalk).to.eql(true);
     });
@@ -310,142 +324,134 @@ describe('broccoli-funnel', function(){
 
   describe('without filtering options', function() {
     it('linking roots without srcDir/destDir, can rebuild without error', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath);
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath);
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
 
           return builder.build();
         })
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
         });
     });
 
     it('simply returns a copy of the input node', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath);
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath);
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
         });
     });
 
     it('simply returns a copy of the input node at a nested destination', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        destDir: 'some-random'
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        destDir: 'some-random',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory + '/some-random';
+        .then(results => {
+          let outputPath = `${results.directory}/some-random`;
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
         })
-        .then(function() {
-          return builder.build();
-        })
-        .then(function(results) {
-          var outputPath = results.directory + '/some-random';
+        .then(() => builder.build())
+        .then(results => {
+          let outputPath = `${results.directory}/some-random`;
 
           expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
         });
     });
 
     it('can properly handle the output path being a broken symlink', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        srcDir: 'subdir1'
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        srcDir: 'subdir1',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function() {
-          return rimraf(node.outputPath);
-        })
-        .then(function() {
+        .then(() => rimraf(node.outputPath))
+        .then(() => {
           fs.symlinkSync('foo/bar/baz.js', node.outputPath);
         })
-        .then(function() {
-          return builder.build();
-        })
-        .then(function(results) {
-          var restrictedInputPath = inputPath + '/subdir1';
-          var outputPath = results.directory;
+        .then(() => builder.build())
+        .then(results => {
+          let restrictedInputPath = `${inputPath}/subdir1`;
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
         });
     });
 
     it('simply returns a copy of the input node at a nested source', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        srcDir: 'subdir1'
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        srcDir: 'subdir1',
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var restrictedInputPath = inputPath + '/subdir1';
-          var outputPath = results.directory;
+        .then(results => {
+          let restrictedInputPath = `${inputPath}/subdir1`;
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
         })
-        .then(function() {
-          return builder.build();
-        })
-        .then(function(results) {
-          var restrictedInputPath = inputPath + '/subdir1';
-          var outputPath = results.directory;
+        .then(() => builder.build())
+        .then(results => {
+          let restrictedInputPath = `${inputPath}/subdir1`;
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
         });
     });
 
     it('matches *.css', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1/subdir2';
-      var node = new Funnel(inputPath, {
-        include: ['*.css']
+      let inputPath = `${FIXTURE_INPUT}/dir1/subdir2`;
+      let node = new Funnel(inputPath, {
+        include: ['*.css'],
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql([
-            'bar.css'
+            'bar.css',
           ]);
         });
     });
 
     it('matches the deprecated: files *.css', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1/subdir2';
-      var oldWarn = console.warn;
-      var message;
-      console.warn = function(s) {
+      let inputPath = `${FIXTURE_INPUT}/dir1/subdir2`;
+      let oldWarn = console.warn;
+      let message;
+      console.warn = function() {
         message = arguments[0];
       };
 
-      var node;
+      let node;
       try {
         expect(message).to.equal(undefined);
 
         node = new Funnel(inputPath, {
-          files: ['*.css']
+          files: ['*.css'],
         });
 
         expect(message).to.equal('broccoli-funnel does not support `files:` option with globs, please use `include:` instead');
@@ -456,33 +462,31 @@ describe('broccoli-funnel', function(){
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
           expect(walkSync(outputPath)).to.eql(['bar.css']);
         });
     });
 
     it('does not error with input node at a missing nested source', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
         srcDir: 'subdir3',
-        allowEmpty: true
+        allowEmpty: true,
       });
 
-      var expected = [];
+      let expected = [];
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(expected);
         })
-        .then(function() {
-          return builder.build();
-        })
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(() => builder.build())
+        .then(results => {
+          let outputPath = results.directory;
 
           expect(walkSync(outputPath)).to.eql(expected);
         });
@@ -491,81 +495,81 @@ describe('broccoli-funnel', function(){
 
   describe('with filtering options', function() {
     function testFiltering(includes, excludes, files, expected) {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
         include: includes,
         exclude: excludes,
-        files: files
+        files,
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
-        var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-        expect(walkSync(outputPath)).to.eql(expected);
-      });
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
     }
 
     function matchPNG(relativePath) {
-      var extension = path.extname(relativePath);
+      let extension = path.extname(relativePath);
 
       return extension === '.png';
     }
 
     function matchPNGAndJS(relativePath) {
-      var extension = path.extname(relativePath);
+      let extension = path.extname(relativePath);
 
       return extension === '.png' || extension === '.js';
     }
 
     describe('filtering with `files`', function() {
       it('can take a list of files', function() {
-        var inputPath = FIXTURE_INPUT + '/dir1';
-        var node = new Funnel(inputPath, {
+        let inputPath = `${FIXTURE_INPUT}/dir1`;
+        let node = new Funnel(inputPath, {
           files: [
             'subdir1/subsubdir1/foo.png',
-            'subdir2/bar.css'
-          ]
+            'subdir2/bar.css',
+          ],
         });
 
         builder = new broccoli.Builder(node);
         return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir1/',
-            'subdir1/subsubdir1/foo.png',
-            'subdir2/',
-            'subdir2/bar.css'
-          ];
+            let expected = [
+              'subdir1/',
+              'subdir1/subsubdir1/',
+              'subdir1/subsubdir1/foo.png',
+              'subdir2/',
+              'subdir2/bar.css',
+            ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+            expect(walkSync(outputPath)).to.eql(expected);
+          });
       });
     });
 
     describe('`files` is incompatible with filters', function() {
       it('so error if `files` and `include` are set', function() {
-        var inputPath = FIXTURE_INPUT + '/dir1';
+        let inputPath = `${FIXTURE_INPUT}/dir1`;
 
-        expect(function() {
+        expect(() => {
           new Funnel(inputPath, {
             files: ['anything'],
-            include: ['*.txt']
+            include: ['*.txt'],
           });
         }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can have one or the other');
       });
 
       it('so error if `files` and `exclude` are set', function() {
-        var inputPath = FIXTURE_INPUT + '/dir1';
+        let inputPath = `${FIXTURE_INPUT}/dir1`;
 
-        expect(function() {
+        expect(() => {
           new Funnel(inputPath, {
-            files: function() { return ['anything']; },
-            exclude: ['*.md']
+            files() { return ['anything']; },
+            exclude: ['*.md'],
           });
         }).to.throw('Cannot pass files option (array or function) and a include/exlude filter. You can have one or the other');
       });
@@ -573,178 +577,172 @@ describe('broccoli-funnel', function(){
 
     describe('filtering with a `files` function', function() {
       it('can take files as a function', function() {
-        var inputPath = FIXTURE_INPUT + '/dir1';
-        var filesByCounter = [
+        let inputPath = `${FIXTURE_INPUT}/dir1`;
+        let filesByCounter = [
           // rebuild 1:
           [
             'subdir1/subsubdir1/foo.png',
-            'subdir2/bar.css'
+            'subdir2/bar.css',
           ],
 
           // rebuild 2:
-          [ 'subdir1/subsubdir1/foo.png' ],
+          ['subdir1/subsubdir1/foo.png'],
 
           // rebuild 3:
           [],
 
           // rebuild 4:
-          ['subdir1/subsubdir2/some.js']
+          ['subdir1/subsubdir2/some.js'],
         ];
 
-        var tree = new Funnel(inputPath, {
-          files: function() {
+        let tree = new Funnel(inputPath, {
+          files() {
             return filesByCounter.shift();
-          }
+          },
         });
 
         builder = new broccoli.Builder(tree);
 
         return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir1/',
-            'subdir1/subsubdir1/foo.png',
-            'subdir2/',
-            'subdir2/bar.css'
-          ];
+            let expected = [
+              'subdir1/',
+              'subdir1/subsubdir1/',
+              'subdir1/subsubdir1/foo.png',
+              'subdir2/',
+              'subdir2/bar.css',
+            ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
+            expect(walkSync(outputPath)).to.eql(expected);
 
-          // Build again
-          return builder.build();
-        })
-        .then(function(results) {
-          var outputPath = results.directory;
+            // Build again
+            return builder.build();
+          })
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir1/',
-            'subdir1/subsubdir1/foo.png',
-          ];
+            let expected = [
+              'subdir1/',
+              'subdir1/subsubdir1/',
+              'subdir1/subsubdir1/foo.png',
+            ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
+            expect(walkSync(outputPath)).to.eql(expected);
 
-          // Build again
-          return builder.build();
-        })
-        .then(function(results) {
-          var outputPath = results.directory;
+            // Build again
+            return builder.build();
+          })
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [];
+            let expected = [];
 
-          expect(walkSync(outputPath)).to.eql(expected);
+            expect(walkSync(outputPath)).to.eql(expected);
 
-          // Build again
-          return builder.build();
-        })
-        .then(function(results) {
-          var outputPath = results.directory;
+            // Build again
+            return builder.build();
+          })
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir2/',
-            'subdir1/subsubdir2/some.js'
-          ];
+            let expected = [
+              'subdir1/',
+              'subdir1/subsubdir2/',
+              'subdir1/subsubdir2/some.js',
+            ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+            expect(walkSync(outputPath)).to.eql(expected);
+          });
       });
 
       it('can take files as a function with exclude (includeCache needs to be cleared)', function() {
-        var inputPath = FIXTURE_INPUT + '/dir1';
-        var filesCounter = 0;
-        var filesByCounter = [
+        let inputPath = `${FIXTURE_INPUT}/dir1`;
+        let filesCounter = 0;
+        let filesByCounter = [
           [],
-          [ 'subdir1/subsubdir1/foo.png' ],
+          ['subdir1/subsubdir1/foo.png'],
           [
             'subdir1/subsubdir1/foo.png',
-            'subdir2/bar.css'
-          ]
+            'subdir2/bar.css',
+          ],
         ];
 
-        var tree = new Funnel(inputPath, {
-          files: function() {
+        let tree = new Funnel(inputPath, {
+          files() {
             return filesByCounter[filesCounter++];
-          }
+          },
         });
 
         builder = new broccoli.Builder(tree);
 
         return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [];
+            let expected = [];
 
-          expect(walkSync(outputPath)).to.eql(expected);
+            expect(walkSync(outputPath)).to.eql(expected);
 
-          // Build again
-          return builder.build();
-        })
-        .then(function(results) {
-          var outputPath = results.directory;
+            // Build again
+            return builder.build();
+          })
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir1/',
-            'subdir1/subsubdir1/foo.png',
-          ];
+            let expected = [
+              'subdir1/',
+              'subdir1/subsubdir1/',
+              'subdir1/subsubdir1/foo.png',
+            ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
+            expect(walkSync(outputPath)).to.eql(expected);
 
-          // Build again
-          return builder.build();
-        })
-        .then(function(results) {
-          var outputPath = results.directory;
+            // Build again
+            return builder.build();
+          })
+          .then(results => {
+            let outputPath = results.directory;
 
-          var expected = [
-            'subdir1/',
-            'subdir1/subsubdir1/',
-            'subdir1/subsubdir1/foo.png',
-            'subdir2/',
-            'subdir2/bar.css'
-          ];
+            let expected = [
+              'subdir1/',
+              'subdir1/subsubdir1/',
+              'subdir1/subsubdir1/foo.png',
+              'subdir2/',
+              'subdir2/bar.css',
+            ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+            expect(walkSync(outputPath)).to.eql(expected);
+          });
       });
     });
 
     describe('include filtering', function() {
       function testAllIncludeMatchers(glob, regexp, func, expected) {
-        it('can take a glob string', function() {
-          return testFiltering(glob, null, null, expected);
-        });
+        it('can take a glob string', function() { testFiltering(glob, null, null, expected); });
 
-        it('can take a regexp pattern', function() {
-          return testFiltering(regexp, null, null, expected);
-        });
+        it('can take a regexp pattern', function() { testFiltering(regexp, null, null, expected); });
 
-        it('can take a function', function() {
-          return testFiltering(func, null, null, expected);
-        });
+        it('can take a function', function() { testFiltering(func, null, null, expected); });
       }
 
-      testAllIncludeMatchers([ '**/*.png' ], [ /.png$/ ], [ matchPNG ], [
+      testAllIncludeMatchers(['**/*.png'], [/.png$/], [matchPNG], [
         'subdir1/',
         'subdir1/subsubdir1/',
-        'subdir1/subsubdir1/foo.png'
+        'subdir1/subsubdir1/foo.png',
       ]);
 
-      testAllIncludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], [ matchPNGAndJS ], [
+      testAllIncludeMatchers(['**/*.png', '**/*.js'], [/.png$/, /.js$/], [matchPNGAndJS], [
         'subdir1/',
         'subdir1/subsubdir1/',
         'subdir1/subsubdir1/foo.png',
         'subdir1/subsubdir2/',
-        'subdir1/subsubdir2/some.js'
+        'subdir1/subsubdir2/some.js',
       ]);
 
       it('is not mutated', function() {
-        var include = [ '**/*.unknown' ];
+        let include = ['**/*.unknown'];
         testFiltering(include, null, null, []);
         expect(include[0]).to.eql('**/*.unknown');
       });
@@ -752,190 +750,184 @@ describe('broccoli-funnel', function(){
 
     describe('debugName', function() {
       it('falls back to the constructor name', function() {
-        var node = new Funnel('inputTree');
+        let node = new Funnel('inputTree');
         expect(node._debugName()).to.eql('Funnel');
       });
 
       it('prefers the provided  annotation', function() {
-        var node = new Funnel('inputTree', {
-          annotation: 'an annotation'
+        let node = new Funnel('inputTree', {
+          annotation: 'an annotation',
         });
 
         expect(node._debugName()).to.eql('an annotation');
-
       });
     });
 
     describe('exclude filtering', function() {
       function testAllExcludeMatchers(glob, regexp, func, expected) {
-        it('can take a glob string', function() {
-          return testFiltering(null, glob, null, expected);
-        });
+        it('can take a glob string', function() { testFiltering(null, glob, null, expected); });
 
-        it('can take a regexp pattern', function() {
-          return testFiltering(null, regexp, null, expected);
-        });
+        it('can take a regexp pattern', function() { testFiltering(null, regexp, null, expected); });
 
-        it('can take a function', function() {
-          return testFiltering(null, func, null, expected);
-        });
+        it('can take a function', function() { testFiltering(null, func, null, expected); });
       }
 
-      testAllExcludeMatchers([ '**/*.png' ], [ /.png$/ ], [ matchPNG ], [
+      testAllExcludeMatchers(['**/*.png'], [/.png$/], [matchPNG], [
         'root-file.txt',
         'subdir1/',
         'subdir1/subsubdir2/',
         'subdir1/subsubdir2/some.js',
         'subdir2/',
-        'subdir2/bar.css'
+        'subdir2/bar.css',
       ]);
 
-      testAllExcludeMatchers([ '**/*.png', '**/*.js' ], [ /.png$/, /.js$/ ], [ matchPNGAndJS ], [
+      testAllExcludeMatchers(['**/*.png', '**/*.js'], [/.png$/, /.js$/], [matchPNGAndJS], [
         'root-file.txt',
         'subdir2/',
-        'subdir2/bar.css'
+        'subdir2/bar.css',
       ]);
 
       it('is not mutated', function() {
-        var exclude = [ '**/*' ];
+        let exclude = ['**/*'];
         testFiltering(null, exclude, null, []);
         expect(exclude[0]).to.eql('**/*');
       });
     });
 
     it('combined filtering (regexp)', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        exclude: [ /.png$/, /.js$/ ],
-        include: [ /.txt$/ ]
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        exclude: [/.png$/, /.js$/],
+        include: [/.txt$/],
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
-        var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-        var expected = [
-          'root-file.txt',
-        ];
+          let expected = [
+            'root-file.txt',
+          ];
 
-        expect(walkSync(outputPath)).to.eql(expected);
-      });
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
     });
 
     it('combined filtering (globs)', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        exclude: [ '**/*.png', '**/*.js' ],
-        include: [ '**/*.txt' ]
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        exclude: ['**/*.png', '**/*.js'],
+        include: ['**/*.txt'],
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
-        var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-        var expected = [
-          'root-file.txt',
-        ];
+          let expected = [
+            'root-file.txt',
+          ];
 
-        expect(walkSync(outputPath)).to.eql(expected);
-      });
+          expect(walkSync(outputPath)).to.eql(expected);
+        });
     });
 
     it('creates its output directory even if no files are matched', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath, {
-        exclude: [ /.*/ ]
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        exclude: [/.*/],
       });
 
       builder = new broccoli.Builder(node);
       return builder.build()
-      .then(function(results) {
-        var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-        expect(walkSync(outputPath)).to.eql([ ]);
-      });
+          expect(walkSync(outputPath)).to.eql([]);
+        });
     });
   });
 
   describe('with customized destination paths', function() {
     it('uses custom getDestinationPath function if provided', function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
-      var node = new Funnel(inputPath);
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath);
 
       node.getDestinationPath = function(relativePath) {
-        return 'foo/' + relativePath;
+        return `foo/${relativePath}`;
       };
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(function(results) {
-          var outputPath = results.directory;
+        .then(results => {
+          let outputPath = results.directory;
 
-          expect(walkSync(outputPath + '/foo')).to.eql(walkSync(inputPath));
+          expect(walkSync(`${outputPath}/foo`)).to.eql(walkSync(inputPath));
         });
     });
 
     it('receives relative inputPath as argument and can escape destDir with ..', function() {
-      var inputPath = FIXTURE_INPUT + '/lib';
-      var node = new Funnel(inputPath, {
+      let inputPath = `${FIXTURE_INPUT}/lib`;
+      let node = new Funnel(inputPath, {
         destDir: 'utility',
-        getDestinationPath: function(relativePath) {
+        getDestinationPath(relativePath) {
           if (relativePath === 'main.js') {
             return '../utility.js';
           }
           return relativePath;
-        }
+        },
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build().then(function(results) {
-        var outputPath = results.directory;
-        expect(walkSync(outputPath)).to.eql([
-          'utility.js',
-          'utility/',
-          'utility/utils.js',
-          'utility/utils/',
-          'utility/utils/foo.js',
-        ]);
-      });
+      return builder.build()
+        .then(results => {
+          let outputPath = results.directory;
+          expect(walkSync(outputPath)).to.eql([
+            'utility.js',
+            'utility/',
+            'utility/utils.js',
+            'utility/utils/',
+            'utility/utils/foo.js',
+          ]);
+        });
     });
   });
 
   describe('canMatchWalk', function() {
-    var inputPath = FIXTURE_INPUT + '/dir1';
+    let inputPath = `${FIXTURE_INPUT}/dir1`;
 
     describe('include', function() {
       it('is false with no include', function() {
-        var node = new Funnel(inputPath);
+        let node = new Funnel(inputPath);
         expect(node.canMatchWalk()).to.eql(false);
       });
 
       it('is true with string include', function() {
-        var node = new Funnel(inputPath, {
-          include: [ 'foo' ]
+        let node = new Funnel(inputPath, {
+          include: ['foo'],
         });
         expect(node.canMatchWalk()).to.eql(true);
       });
 
       it('is false with regexp include', function() {
-        var node = new Funnel(inputPath, {
-          include: [ /foo/ ]
+        let node = new Funnel(inputPath, {
+          include: [/foo/],
         });
         expect(node.canMatchWalk()).to.eql(false);
       });
 
       it('is false with string + regexp include', function() {
-        var node = new Funnel(inputPath, {
-          include: [ 'foo', /foo/ ]
+        let node = new Funnel(inputPath, {
+          include: ['foo', /foo/],
         });
         expect(node.canMatchWalk()).to.eql(false);
       });
 
       it('is true with string + string include', function() {
-        var node = new Funnel(inputPath, {
-          include: [ 'foo', 'bar' ]
+        let node = new Funnel(inputPath, {
+          include: ['foo', 'bar'],
         });
         expect(node.canMatchWalk()).to.eql(true);
       });
@@ -943,34 +935,34 @@ describe('broccoli-funnel', function(){
 
     describe('exclude', function() {
       it('is false with no exclude', function() {
-        var node = new Funnel(inputPath);
+        let node = new Funnel(inputPath);
         expect(node.canMatchWalk()).to.eql(false);
       });
 
       it('is true with string exclude', function() {
-        var node = new Funnel(inputPath, {
-          exclude: [ 'foo' ]
+        let node = new Funnel(inputPath, {
+          exclude: ['foo'],
         });
         expect(node.canMatchWalk()).to.eql(true);
       });
 
       it('is false with regexp exclude', function() {
-        var node = new Funnel(inputPath, {
-          exclude: [ /foo/ ]
+        let node = new Funnel(inputPath, {
+          exclude: [/foo/],
         });
         expect(node.canMatchWalk()).to.eql(false);
       });
 
       it('is false with string + regexp exclude', function() {
-        var node = new Funnel(inputPath, {
-          exclude: [ 'foo', /foo/ ]
+        let node = new Funnel(inputPath, {
+          exclude: ['foo', /foo/],
         });
         expect(node.canMatchWalk()).to.eql(false);
       });
 
       it('is true with string +  string exclude', function() {
-        var node = new Funnel(inputPath, {
-          exclude: [ 'foo', 'bar' ]
+        let node = new Funnel(inputPath, {
+          exclude: ['foo', 'bar'],
         });
         expect(node.canMatchWalk()).to.eql(true);
       });
@@ -978,16 +970,16 @@ describe('broccoli-funnel', function(){
   });
 
   describe('includeFile', function() {
-    var node;
+    let node;
 
     beforeEach(function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
 
       node = new Funnel(inputPath);
     });
 
     it('returns false if the path is included in an exclude filter', function() {
-      node.exclude = [ /.foo$/, /.bar$/ ];
+      node.exclude = [/.foo$/, /.bar$/];
 
       expect(node.includeFile('blah/blah/blah.foo')).to.eql(false);
       expect(node.includeFile('blah/blah/blah.bar')).to.eql(false);
@@ -995,14 +987,14 @@ describe('broccoli-funnel', function(){
     });
 
     it('returns true if the path is included in an include filter', function() {
-      node.include = [ /.foo$/, /.bar$/ ];
+      node.include = [/.foo$/, /.bar$/];
 
       expect(node.includeFile('blah/blah/blah.foo')).to.eql(true);
       expect(node.includeFile('blah/blah/blah.bar')).to.eql(true);
     });
 
     it('returns false if the path is not included in an include filter', function() {
-      node.include = [ /.foo$/, /.bar$/ ];
+      node.include = [/.foo$/, /.bar$/];
 
       expect(node.includeFile('blah/blah/blah.baz')).to.not.eql(true);
     });
@@ -1016,30 +1008,30 @@ describe('broccoli-funnel', function(){
 
       // changing the filter mid-run should have no result on
       // previously calculated paths
-      node.include = [ /.foo$/, /.bar$/ ];
+      node.include = [/.foo$/, /.bar$/];
 
       expect(node.includeFile('blah/blah/blah.baz')).to.eql(true);
     });
   });
 
   describe('lookupDestinationPath', function() {
-    var node;
+    let node;
 
     beforeEach(function() {
-      var inputPath = FIXTURE_INPUT + '/dir1';
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
 
       node = new Funnel(inputPath);
     });
 
     it('returns the input path if no getDestinationPath method is defined', function() {
-      var relativePath = 'foo/bar/baz';
+      let relativePath = 'foo/bar/baz';
 
       expect(node.lookupDestinationPath(relativePath)).to.be.equal(relativePath);
     });
 
     it('returns the output of getDestinationPath method if defined', function() {
-      var relativePath = 'foo/bar/baz';
-      var expected = 'blah/blah/blah';
+      let relativePath = 'foo/bar/baz';
+      let expected = 'blah/blah/blah';
 
       node.getDestinationPath = function() {
         return expected;
@@ -1049,10 +1041,9 @@ describe('broccoli-funnel', function(){
     });
 
     it('calls getDestinationPath once and caches result', function() {
-      var relativePath = 'foo/bar/baz';
-      var expected = 'blah/blah/blah';
-      var getDestPathValue = expected;
-      var getDestPathCalled = 0;
+      let relativePath = 'foo/bar/baz';
+      let expected = 'blah/blah/blah';
+      let getDestPathCalled = 0;
 
       node.getDestinationPath = function() {
         getDestPathCalled++;
@@ -1062,8 +1053,6 @@ describe('broccoli-funnel', function(){
 
       expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
       expect(getDestPathCalled).to.be.equal(1);
-
-      getDestPathValue = 'some/other/thing';
 
       expect(node.lookupDestinationPath(relativePath)).to.be.equal(expected);
       expect(getDestPathCalled).to.be.equal(1);
