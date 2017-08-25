@@ -12,6 +12,9 @@
   "files": [
     "index.js"
   ],
+  "engines": {
+    "node": "^4.5 || 6.* || >= 7.*"
+  },
   "scripts": {
     "test": "mocha tests/",
     "test:debug": "mocha debug tests/",
@@ -41,10 +44,11 @@
   "devDependencies": {
     "broccoli-builder": "^0.18.0",
     "chai": "^3.2.0",
+    "eslint-plugin-mocha": "^4.11.0",
     "fixturify": "^0.3.0",
     "fs-extra": "^0.30.0",
     "mocha": "~3.0.2",
-    "mocha-jshint": "2.3.1",
+    "mocha-eslint": "^4.1.0",
     "rimraf": "^2.3.2",
     "rsvp": "^3.3.1"
   }
