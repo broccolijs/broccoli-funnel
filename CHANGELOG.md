@@ -1,5 +1,17 @@
 # master
 
+# 2.0.1
+
+* Fixes issue with double dots in file names (#8) by using `fs.existSync` directly
+
+# 2.0.0
+
+* Drops support for `node@0.12`
+
+# 1.2.0
+
+* Improve excludes performance by using node-walk-sync for excludes when possible (#93)
+
 # 1.1.0
 
 * Opt out of cache directory creation.
