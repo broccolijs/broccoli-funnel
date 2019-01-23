@@ -198,6 +198,8 @@ Funnel.prototype.build = function() {
     }
   }
 
+  let inputPathExists = fs.existsSync(inputPath);
+
   let linkedRoots = false;
   if (this.shouldLinkRoots()) {
     linkedRoots = true;
@@ -215,8 +217,6 @@ Funnel.prototype.build = function() {
      * all scenarios made it possible for initial builds to succeed without
      * specifying `this.allowEmpty`.
      */
-
-    let inputPathExists = fs.existsSync(inputPath);
 
     // This is specifically looking for broken symlinks.
     let outputPathExists = fs.existsSync(this.outputPath);
@@ -255,8 +255,12 @@ Funnel.prototype.build = function() {
     /*eslint-enable no-lonely-if*/
 
     this._isRebuild = true;
-  } else {
+  } else if (inputPathExists) {
     this.processFilters(inputPath);
+  } else if (!this.allowEmpty) {
+    throw new Error(`You specified a \`"srcDir": ${this.srcDir}\` which does not exist and did not specify \`"allowEmpty": true\`.`);
+  } else { // !inputPathExists && this.allowEmpty
+    // Do nothing (?)
   }
 
   this._debug('build, %o', {
