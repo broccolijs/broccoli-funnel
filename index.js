@@ -260,7 +260,9 @@ Funnel.prototype.build = function() {
   } else if (!this.allowEmpty) {
     throw new Error(`You specified a \`"srcDir": ${this.srcDir}\` which does not exist and did not specify \`"allowEmpty": true\`.`);
   } else { // !inputPathExists && this.allowEmpty
-    // Do nothing (?)
+    // Just make an empty folder so that any downstream consumers who don't know
+    // to ignore this on `allowEmpty` don't get trolled.
+    mkdirp(this.destPath);
   }
 
   this._debug('build, %o', {
