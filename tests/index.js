@@ -320,6 +320,26 @@ describe('broccoli-funnel', function() {
 
       expect(node._matchedWalk).to.eql(true);
     });
+
+    it('throws error on unspecified allowEmpty', function() {
+      let assertions = 0;
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        include: ['*'],
+        srcDir: 'subdir3',
+        destDir: 'subdir3',
+      });
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .catch(error => {
+          expect(error.stack.toString()).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
+          assertions++;
+        })
+        .then(() => {
+          expect(assertions).to.equal(1, 'Build threw an error.');
+        });
+    });
   });
 
   describe('without filtering options', function() {
