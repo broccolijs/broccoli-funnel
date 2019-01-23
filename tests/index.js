@@ -375,14 +375,14 @@ describe('broccoli-funnel', function() {
         allowEmpty: true,
       });
 
-       let expected = ['some-place/'];
+      let expected = ['some-place/'];
 
-       builder = new broccoli.Builder(node);
+      builder = new broccoli.Builder(node);
       return builder.build()
         .then(results => {
           let outputPath = results.directory;
 
-           expect(walkSync(outputPath)).to.eql(expected);
+          expect(walkSync(outputPath)).to.eql(expected);
         })
         .then(() => builder.build())
         .then(results => {
