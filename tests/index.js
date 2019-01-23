@@ -333,11 +333,36 @@ describe('broccoli-funnel', function() {
       builder = new broccoli.Builder(node);
       return builder.build()
         .catch(error => {
-          expect(error.stack.toString()).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
+          expect(error.message).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
           assertions++;
         })
         .then(() => {
           expect(assertions).to.equal(1, 'Build threw an error.');
+        });
+    });
+
+    it('does not error with input node at a missing nested source', function() {
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        include: ['*'],
+        srcDir: 'subdir3',
+        allowEmpty: true,
+      });
+
+      let expected = [];
+
+      builder = new broccoli.Builder(node);
+      return builder.build()
+        .then(results => {
+          let outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        })
+        .then(() => builder.build())
+        .then(results => {
+          let outputPath = results.directory;
+
+          expect(walkSync(outputPath)).to.eql(expected);
         });
     });
   });
