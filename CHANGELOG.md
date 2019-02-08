@@ -1,5 +1,9 @@
 # master
 
+# 2.0.2
+
+- Fix usage of `allowEmpty` when also using `include` / `exclude`
+
 # 2.0.1
 
 * Fixes issue with double dots in file names (#8) by using `fs.existSync` directly
