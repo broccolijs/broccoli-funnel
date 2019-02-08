@@ -17,9 +17,7 @@
   },
   "scripts": {
     "test": "mocha tests/",
-    "test:debug": "mocha debug tests/",
-    "preversion": "npm test",
-    "postversion": "git push origin master --follow-tags && npm publish"
+    "test:debug": "mocha debug tests/"
   },
   "keywords": [
     "broccoli-plugin",
