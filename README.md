@@ -10,7 +10,7 @@ exclude.
 
 ## Documentation
 
-### `new Funnel(inputNode, options)`
+### `funnel(inputNode, options)`
 
 `inputNode` *{Single node}*
 
@@ -38,8 +38,8 @@ If your project has the following file structure:
 You can select a subsection of the tree via Funnel:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
-var cssFiles = new Funnel('src/css');
+const funnel = require('broccoli-funnel');
+const cssFiles = funnel('src/css');
 
 /*
   cssFiles contains the following files:
@@ -81,11 +81,11 @@ If your project has the following file structure:
 You can select a subsection of the node via Funnel:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
-var MergeTrees = require('broccoli-merge-trees');
+const funnel = require('broccoli-funnel');
+const merge = require('broccoli-merge-trees');
 
 // root of our source files
-var projectFiles = 'src';
+const projectFiles = 'src';
 
 /* get a new node of only files in the 'src/css' directory
   cssFiles contains the following files:
@@ -93,7 +93,7 @@ var projectFiles = 'src';
   ├── reset.css
   └── todos.css
 */
-var cssFiles = new Funnel(projectFiles, {
+const cssFiles = funnel(projectFiles, {
   srcDir: 'css'
 });
 
@@ -103,12 +103,12 @@ var cssFiles = new Funnel(projectFiles, {
   ├── check-mark.png
   └── logo.jpg
 */
-var imageFiles = new Funnel(projectFiles, {
+const imageFiles = funnel(projectFiles, {
   srcDir: 'icons'
 });
 
 
-module.exports = new MergeTrees([cssFiles, imageFiles]);
+module.exports = merge([cssFiles, imageFiles]);
 ```
 
 ----
@@ -139,9 +139,9 @@ If your project has the following file structure:
 You can select a subsection of the directory structure via Funnel and copy it to a new location:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+const funnel = require('broccoli-funnel');
 
-var cssFiles = new Funnel('src/css', {
+const cssFiles = funnel('src/css', {
   destDir: 'build'
 });
 
@@ -194,12 +194,12 @@ You can select files that match a glob expression and copy those subdirectories 
 new location, preserving their location within parent directories:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+const funnel = require('broccoli-funnel');
 
 // finds all files that match /todo/ and moves them
 // the destDir
-var todoRelatedFiles = new Funnel('src', {
-  include: ['todo/**/*']
+const todoRelatedFiles = funnel('src', {
+  include: ['**/todo*']
 });
 
 /*
@@ -247,11 +247,11 @@ If your project has the following file structure:
 You can select files that match a glob expression and exclude them from copying:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+const funnel = require('broccoli-funnel');
 
 // finds all files in 'src' EXCEPT `todo.js` in any directory
 // or sub-directory and adds them to a node.
-var nobodyLikesTodosAnyway = new Funnel('src', {
+const nobodyLikesTodosAnyway = funnel('src', {
   exclude: ['**/todo.js']
 });
 
@@ -301,10 +301,10 @@ You can select a specific list of files copy those subdirectories to a
 new location, preserving their location within parent directories:
 
 ```javascript
-var Funnel = require('broccoli-funnel');
+const funnel = require('broccoli-funnel');
 
 // finds these specific files and moves them to the destDir
-var someFiles = new Funnel('src', {
+const someFiles = funnel('src', {
   files: ['css/reset.css', 'icons/check-mark.png']
 });
 
@@ -337,7 +337,7 @@ In the following example, `getDestinationPath` is used to move `main.js` to
 `ember-metal.js`:
 
 ```javascript
-var node = new Funnel('packages/ember-metal/lib', {
+const node = funnel('packages/ember-metal/lib', {
   destDir: 'ember-metal',
 
   getDestinationPath: function(relativePath) {
