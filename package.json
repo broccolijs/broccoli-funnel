@@ -17,7 +17,8 @@
   },
   "scripts": {
     "test": "mocha tests/",
-    "test:debug": "mocha debug tests/"
+    "test:debug": "mocha debug tests/",
+    "test:debugger": "mocha --inspect-brk tests/"
   },
   "keywords": [
     "broccoli-plugin",
@@ -26,24 +27,26 @@
   "dependencies": {
     "array-equal": "^1.0.0",
     "blank-object": "^1.0.1",
-    "broccoli-plugin": "^1.3.0",
+    "broccoli-plugin": "^3.0.0",
     "debug": "^4.1.1",
     "fast-ordered-set": "^1.0.0",
     "fs-tree-diff": "^2.0.1",
-    "heimdalljs": "^0.2.6",
+    "heimdalljs": "^0.2.0",
     "minimatch": "^3.0.0",
     "path-posix": "^1.0.0",
-    "symlink-or-copy": "^1.2.0",
-    "walk-sync": "^2.0.2"
+    "rimraf": "^3.0.0",
+    "symlink-or-copy": "^1.0.0",
+    "walk-sync": "^0.3.1"
   },
   "devDependencies": {
-    "broccoli-builder": "^0.18.14",
+    "broccoli-builder": "^0.18.0",
     "chai": "^4.2.0",
-    "eslint-plugin-mocha": "^6.2.2",
-    "fixturify": "^1.2.0",
+    "eslint-plugin-mocha": "^6.1.1",
+    "fixturify": "^0.3.0",
     "fs-extra": "^8.1.0",
-    "mocha": "~6.2.2",
-    "mocha-eslint": "^6.0.0",
-    "rsvp": "^4.8.5"
+    "mocha": "~6.2.1",
+    "mocha-eslint": "^5.0.0",
+    "rimraf": "^3.0.0",
+    "rsvp": "^3.3.1"
   }
 }
