@@ -48,6 +48,18 @@ function isNotAPattern(pattern) {
   return true;
 }
 
+function pathExists(path) {
+  // creating this function to check if file exist because of issue in node 10+
+  // ref: https://github.com/nodejs/node/issues/30538
+  try {
+    fs.accessSync(path);
+    fs.statSync(path);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 Funnel.prototype = Object.create(Plugin.prototype);
 Funnel.prototype.constructor = Funnel;
 function Funnel(inputNode, _options) {
@@ -219,7 +231,7 @@ Funnel.prototype.build = function() {
      */
 
     // This is specifically looking for broken symlinks.
-    let outputPathExists = fs.existsSync(this.outputPath);
+    let outputPathExists = pathExists(this.outputPath);
 
     // Doesn't count as a rebuild if there's not an existing outputPath.
     this._isRebuild = this._isRebuild && outputPathExists;

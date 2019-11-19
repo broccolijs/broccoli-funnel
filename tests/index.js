@@ -2,11 +2,9 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const RSVP = require('rsvp');
 const expect = require('chai').expect;
 const walkSync = require('walk-sync');
 const broccoli = require('broccoli-builder');
-const rimraf = RSVP.denodeify(require('rimraf'));
 const fixturify = require('fixturify');
 
 require('mocha-eslint')([
@@ -463,7 +461,7 @@ describe('broccoli-funnel', function() {
 
       builder = new broccoli.Builder(node);
       return builder.build()
-        .then(() => rimraf(node.outputPath))
+        .then(() => fs.removeSync(node.outputPath))
         .then(() => {
           fs.symlinkSync('foo/bar/baz.js', node.outputPath);
         })
