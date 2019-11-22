@@ -252,7 +252,7 @@ const funnel = require('broccoli-funnel');
 // finds all files in 'src' EXCEPT `todo.js` in any directory
 // or sub-directory and adds them to a node.
 const nobodyLikesTodosAnyway = funnel('src', {
-  exclude: ['**/todo.js']
+  exclude: ['**/todo*']
 });
 
 /*
