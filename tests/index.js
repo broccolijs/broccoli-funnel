@@ -21,7 +21,7 @@ describe('broccoli-funnel', function() {
   const FIXTURE_INPUT = path.resolve(__dirname, '../tmp/INPUT');
 
   beforeEach(function() {
-    fs.mkdirpSync(FIXTURE_INPUT);
+    fs.mkdirSync(FIXTURE_INPUT, { recursive: true });
     fixturify.writeSync(FIXTURE_INPUT, {
       dir1: {
         subdir1: {
