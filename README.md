@@ -350,6 +350,15 @@ const node = funnel('packages/ember-metal/lib', {
 });
 ```
 
+## Extending Funnel
+If you desire to extend funnel follow the below snippet
+```js
+const { Funnel } = require('broccoli-funnel');
+class CustomFunnel extends Funnel {
+  // cutstom implementation
+}
+```
+
 ## ZOMG!!! TESTS?!?!!?
 
 I know, right?
