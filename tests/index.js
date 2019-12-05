@@ -2,11 +2,9 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const RSVP = require('rsvp');
 const expect = require('chai').expect;
 const walkSync = require('walk-sync');
 const broccoli = require('broccoli-builder');
-const rimraf = RSVP.denodeify(require('rimraf'));
 const fixturify = require('fixturify');
 
 require('mocha-eslint')([
@@ -23,7 +21,7 @@ describe('broccoli-funnel', function() {
   const FIXTURE_INPUT = path.resolve(__dirname, '../tmp/INPUT');
 
   beforeEach(function() {
-    fs.mkdirpSync(FIXTURE_INPUT);
+    fs.mkdirSync(FIXTURE_INPUT, { recursive: true });
     fixturify.writeSync(FIXTURE_INPUT, {
       dir1: {
         subdir1: {
@@ -57,113 +55,100 @@ describe('broccoli-funnel', function() {
   });
 
   describe('rebuilding', function() {
-    it('correctly rebuilds', function() {
+    it('correctly rebuilds', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(`${FIXTURE_INPUT}/dir1`, {
         include: ['**/*.js'],
       });
+      const builder = new broccoli.Builder(node);
 
-      builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      {
+        let results = await builder.build();
+        let outputPath = results.directory;
+        expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+      }
 
-          expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+      {
+        let mutatedFile = `${inputPath}/subdir1/subsubdir2/some.js`;
+        fs.writeFileSync(mutatedFile, fs.readFileSync(mutatedFile));
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          let mutatedFile = `${inputPath}/subdir1/subsubdir2/some.js`;
-          fs.writeFileSync(mutatedFile, fs.readFileSync(mutatedFile));
-          return builder.build();
-        })
-        .then(results => {
-          let outputPath = results.directory;
-
-          expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
-        });
+        expect(walkSync(outputPath, ['**/*.js'])).to.eql(walkSync(inputPath, ['**/*.js']));
+      }
     });
   });
 
   describe('linkRoots', function() {
-    it('links input to output if possible', function() {
+    it('links input to output if possible', async function() {
       let node = new Funnel(FIXTURE_INPUT);
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
-        });
+      const results = await builder.build();
+
+      expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
     });
 
-    it('links input to destDir if possible', function() {
+    it('links input to destDir if possible', async function() {
       let node = new Funnel(FIXTURE_INPUT, {
         destDir: 'output',
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          expect(fs.lstatSync(`${results.directory}/output`).isSymbolicLink()).to.eql(true);
-          expect(fs.realpathSync(`${results.directory}/output`)).to.eql(FIXTURE_INPUT);
-        });
+      const results = await builder.build();
+      expect(fs.lstatSync(`${results.directory}/output`).isSymbolicLink()).to.eql(true);
+      expect(fs.realpathSync(`${results.directory}/output`)).to.eql(FIXTURE_INPUT);
     });
 
-    it('links srcDir to output if possible', function() {
+    it('links srcDir to output if possible', async function() {
       let node = new Funnel(FIXTURE_INPUT, {
         srcDir: 'dir1',
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
-          expect(fs.realpathSync(results.directory)).to.eql(path.resolve(FIXTURE_INPUT, 'dir1'));
-        });
+      const results = await builder.build();
+      expect(fs.lstatSync(results.directory).isSymbolicLink()).to.eql(true);
+      expect(fs.realpathSync(results.directory)).to.eql(path.resolve(FIXTURE_INPUT, 'dir1'));
     });
 
-    it('links srcDir to destDir if possible', function() {
+    it('links srcDir to destDir if possible', async function() {
       let node = new Funnel(FIXTURE_INPUT, {
         srcDir: 'lib',
         destDir: 'output',
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          expect(fs.lstatSync(`${results.directory}/output`).isSymbolicLink()).to.eql(true);
-          expect(fs.realpathSync(`${results.directory}/output`)).to.eql(path.resolve(FIXTURE_INPUT, 'lib'));
-        });
+      const results = await builder.build();
+      expect(fs.lstatSync(`${results.directory}/output`).isSymbolicLink()).to.eql(true);
+      expect(fs.realpathSync(`${results.directory}/output`)).to.eql(path.resolve(FIXTURE_INPUT, 'lib'));
     });
 
-    it('stable on idempotent rebuild', function() {
+    it('stable on idempotent rebuild', async function() {
       let node = new Funnel(`${FIXTURE_INPUT}/dir1`);
       let stat;
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          stat = fs.lstatSync(results.directory);
-          return builder.build();
-        })
-        .then(results => {
-          let newStat = fs.lstatSync(results.directory);
+      stat = fs.lstatSync((await builder.build()).directory);
+      const results = await builder.build();
+      let newStat = fs.lstatSync(results.directory);
 
-          // having deep equal assertion here causes intermittent failures on CI
-          // access time varies between runs
-          expect(newStat.dev).to.eql(stat.dev);
-          expect(newStat.mode).to.eql(stat.mode);
-          expect(newStat.nlink).to.eql(stat.nlink);
-          expect(newStat.uid).to.eql(stat.uid);
-          expect(newStat.gid).to.eql(stat.gid);
-          expect(newStat.rdev).to.eql(stat.rdev);
-          expect(newStat.blksize).to.eql(stat.blksize);
-          expect(newStat.ino).to.eql(stat.ino);
-          expect(newStat.size).to.eql(stat.size);
-          expect(newStat.blocks).to.eql(stat.blocks);
-          expect(newStat.birthtime).to.eql(stat.birthtime);
-          expect(newStat.ctime).to.eql(stat.ctime);
-        });
+      // having deep equal assertion here causes intermittent failures on CI
+      // access time varies between runs
+      expect(newStat.dev).to.eql(stat.dev);
+      expect(newStat.mode).to.eql(stat.mode);
+      expect(newStat.nlink).to.eql(stat.nlink);
+      expect(newStat.uid).to.eql(stat.uid);
+      expect(newStat.gid).to.eql(stat.gid);
+      expect(newStat.rdev).to.eql(stat.rdev);
+      expect(newStat.blksize).to.eql(stat.blksize);
+      expect(newStat.ino).to.eql(stat.ino);
+      expect(newStat.size).to.eql(stat.size);
+      expect(newStat.blocks).to.eql(stat.blocks);
+      expect(newStat.birthtime).to.eql(stat.birthtime);
+      expect(newStat.ctime).to.eql(stat.ctime);
     });
 
-    it('properly supports relative path input node', function() {
+    it('properly supports relative path input node', async function() {
       let assertions = 0;
 
       let node = new Funnel('../broccoli-funnel', {
@@ -171,16 +156,15 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .catch(() => {
-          assertions++;
-        })
-        .then(() => {
-          expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
-        });
+      try {
+        await builder.build();
+      } catch (e) {
+        assertions++;
+      }
+      expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
     });
 
-    it('throws error on unspecified allowEmpty', function() {
+    it('throws error on unspecified allowEmpty', async function() {
       let assertions = 0;
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
@@ -189,19 +173,18 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .catch(error => {
-          expect(error.stack.toString()).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
-          assertions++;
-        })
-        .then(() => {
-          expect(assertions).to.equal(1, 'Build threw an error.');
-        });
+      try {
+        await builder.build();
+      } catch (error) {
+        expect(error.stack.toString()).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
+        assertions++;
+      }
+      expect(assertions).to.equal(1, 'Build threw an error.');
     });
   });
 
   describe('processFile', function() {
-    it('is not called when simply linking roots (aka no include/exclude)', function() {
+    it('is not called when simply linking roots (aka no include/exclude)', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         processFile() {
@@ -210,15 +193,13 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
-        });
+      expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
     });
 
-    it('is called for each included file', function() {
+    it('is called for each included file', async function() {
       let processFileArguments = [];
 
       let inputPath = `${FIXTURE_INPUT}/dir1`;
@@ -239,24 +220,22 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(() => {
-          let expected = [
-            ['__input_path__/subdir1/subsubdir1/foo.png',
-              '__output_path__/foo/subdir1/subsubdir1/foo.png',
-              'subdir1/subsubdir1/foo.png',
-            ],
-            ['__input_path__/subdir1/subsubdir2/some.js',
-              '__output_path__/foo/subdir1/subsubdir2/some.js',
-              'subdir1/subsubdir2/some.js',
-            ],
-          ];
+      await builder.build();
+      let expected = [
+        ['__input_path__/subdir1/subsubdir1/foo.png',
+          '__output_path__/foo/subdir1/subsubdir1/foo.png',
+          'subdir1/subsubdir1/foo.png',
+        ],
+        ['__input_path__/subdir1/subsubdir2/some.js',
+          '__output_path__/foo/subdir1/subsubdir2/some.js',
+          'subdir1/subsubdir2/some.js',
+        ],
+      ];
 
-          expect(processFileArguments).to.eql(expected);
-        });
+      expect(processFileArguments).to.eql(expected);
     });
 
-    it('is responsible for generating files in the destDir', function() {
+    it('is responsible for generating files in the destDir', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
 
       let node = new Funnel(inputPath, {
@@ -269,21 +248,19 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql([
-            // folders exist
-            'foo/',
-            'foo/subdir1/',
-            'foo/subdir1/subsubdir1/',
-            'foo/subdir1/subsubdir2/',
-          ]);
-        });
+      expect(walkSync(outputPath)).to.eql([
+        // folders exist
+        'foo/',
+        'foo/subdir1/',
+        'foo/subdir1/subsubdir1/',
+        'foo/subdir1/subsubdir2/',
+      ]);
     });
 
-    it('works with mixed glob and RegExp includes', function() {
+    it('works with mixed glob and RegExp includes', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         include: ['**/*.png', /.js$/],
@@ -295,18 +272,16 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql([
-            // dir exist
-            'foo/',
-            'foo/subdir1/',
-            'foo/subdir1/subsubdir1/',
-            'foo/subdir1/subsubdir2/',
-          ]);
-        });
+      expect(walkSync(outputPath)).to.eql([
+        // dir exist
+        'foo/',
+        'foo/subdir1/',
+        'foo/subdir1/subsubdir1/',
+        'foo/subdir1/subsubdir2/',
+      ]);
     });
 
     it('correctly chooses _matchedWalk scenario', function() {
@@ -321,7 +296,7 @@ describe('broccoli-funnel', function() {
       expect(node._matchedWalk).to.eql(true);
     });
 
-    it('throws error on unspecified allowEmpty', function() {
+    it('throws error on unspecified allowEmpty', async function() {
       let assertions = 0;
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
@@ -331,17 +306,17 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .catch(error => {
-          expect(error.message).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
-          assertions++;
-        })
-        .then(() => {
-          expect(assertions).to.equal(1, 'Build threw an error.');
-        });
+      try {
+        await builder.build();
+      } catch (error) {
+        expect(error.message).to.contain('You specified a `"srcDir": subdir3` which does not exist and did not specify `"allowEmpty": true`.');
+        assertions++;
+      }
+
+      expect(assertions).to.equal(1, 'Build threw an error.');
     });
 
-    it('does not error with input node at a missing nested source', function() {
+    it('does not error with input node at a missing nested source', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         include: ['*'],
@@ -352,21 +327,23 @@ describe('broccoli-funnel', function() {
       let expected = [];
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        })
-        .then(() => builder.build())
-        .then(results => {
-          let outputPath = results.directory;
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+        expect(walkSync(outputPath)).to.eql(expected);
+      }
+
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
+
+        expect(walkSync(outputPath)).to.eql(expected);
+      }
     });
 
-    it('creates nested output path when input node at a missing nested source', function() {
+    it('creates nested output path when input node at a missing nested source', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         include: ['*'],
@@ -378,145 +355,142 @@ describe('broccoli-funnel', function() {
       let expected = ['some-place/'];
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        })
-        .then(() => builder.build())
-        .then(results => {
-          let outputPath = results.directory;
+        expect(walkSync(outputPath)).to.eql(expected);
+      }
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
+        expect(walkSync(outputPath)).to.eql(expected);
+      }
 
-          return builder.build();
-        })
-        .then(results => {
-          let outputPath = results.directory;
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+        expect(walkSync(outputPath)).to.eql(expected);
+      }
     });
   });
 
   describe('without filtering options', function() {
-    it('linking roots without srcDir/destDir, can rebuild without error', function() {
+    it('linking roots without srcDir/destDir, can rebuild without error', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath);
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+        expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+      }
 
-          return builder.build();
-        })
-        .then(results => {
-          let outputPath = results.directory;
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
-        });
+        expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+      }
     });
 
-    it('simply returns a copy of the input node', function() {
+    it('simply returns a copy of the input node', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath);
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
-        });
+      expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
     });
 
-    it('simply returns a copy of the input node at a nested destination', function() {
+    it('simply returns a copy of the input node at a nested destination', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         destDir: 'some-random',
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = `${results.directory}/some-random`;
+      {
+        const results = await builder.build();
+        let outputPath = `${results.directory}/some-random`;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
-        })
-        .then(() => builder.build())
-        .then(results => {
-          let outputPath = `${results.directory}/some-random`;
+        expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+      }
 
-          expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
-        });
+      {
+        const results = await builder.build();
+        let outputPath = `${results.directory}/some-random`;
+
+        expect(walkSync(outputPath)).to.eql(walkSync(inputPath));
+      }
     });
 
-    it('can properly handle the output path being a broken symlink', function() {
+    it('can properly handle the output path being a broken symlink', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         srcDir: 'subdir1',
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(() => rimraf(node.outputPath))
-        .then(() => {
-          fs.symlinkSync('foo/bar/baz.js', node.outputPath);
-        })
-        .then(() => builder.build())
-        .then(results => {
-          let restrictedInputPath = `${inputPath}/subdir1`;
-          let outputPath = results.directory;
+      await builder.build();
 
-          expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
-        });
+      fs.removeSync(node.outputPath);
+      fs.symlinkSync('foo/bar/baz.js', node.outputPath);
+
+      const results = await builder.build();
+      let restrictedInputPath = `${inputPath}/subdir1`;
+      let outputPath = results.directory;
+
+      expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
     });
 
-    it('simply returns a copy of the input node at a nested source', function() {
+    it('simply returns a copy of the input node at a nested source', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         srcDir: 'subdir1',
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let restrictedInputPath = `${inputPath}/subdir1`;
-          let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
-        })
-        .then(() => builder.build())
-        .then(results => {
-          let restrictedInputPath = `${inputPath}/subdir1`;
-          let outputPath = results.directory;
+      {
+        const results = await builder.build();
+        let restrictedInputPath = `${inputPath}/subdir1`;
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
-        });
+        expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
+      }
+
+      {
+        const results = await builder.build();
+        let restrictedInputPath = `${inputPath}/subdir1`;
+        let outputPath = results.directory;
+
+        expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
+      }
     });
 
-    it('matches *.css', function() {
+    it('matches *.css', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1/subdir2`;
       let node = new Funnel(inputPath, {
         include: ['*.css'],
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql([
-            'bar.css',
-          ]);
-        });
+      expect(walkSync(outputPath)).to.eql([
+        'bar.css',
+      ]);
     });
 
-    it('matches the deprecated: files *.css', function() {
+    it('matches the deprecated: files *.css', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1/subdir2`;
       let oldWarn = console.warn;
       let message;
@@ -539,14 +513,12 @@ describe('broccoli-funnel', function() {
       }
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
-          expect(walkSync(outputPath)).to.eql(['bar.css']);
-        });
+      const results = await builder.build();
+      let outputPath = results.directory;
+      expect(walkSync(outputPath)).to.eql(['bar.css']);
     });
 
-    it('does not error with input node at a missing nested source', function() {
+    it('does not error with input node at a missing nested source', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         srcDir: 'subdir3',
@@ -556,23 +528,23 @@ describe('broccoli-funnel', function() {
       let expected = [];
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        })
-        .then(() => builder.build())
-        .then(results => {
-          let outputPath = results.directory;
+        expect(walkSync(outputPath)).to.eql(expected);
+      }
+      {
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+        expect(walkSync(outputPath)).to.eql(expected);
+      }
     });
   });
 
   describe('with filtering options', function() {
-    function testFiltering(includes, excludes, files, expected) {
+    async function testFiltering(includes, excludes, files, expected) {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         include: includes,
@@ -581,12 +553,10 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+      expect(walkSync(outputPath)).to.eql(expected);
     }
 
     function matchPNG(relativePath) {
@@ -602,7 +572,7 @@ describe('broccoli-funnel', function() {
     }
 
     describe('filtering with `files`', function() {
-      it('can take a list of files', function() {
+      it('can take a list of files', async function() {
         let inputPath = `${FIXTURE_INPUT}/dir1`;
         let node = new Funnel(inputPath, {
           files: [
@@ -612,20 +582,18 @@ describe('broccoli-funnel', function() {
         });
 
         builder = new broccoli.Builder(node);
-        return builder.build()
-          .then(results => {
-            let outputPath = results.directory;
+        const results = await builder.build();
+        let outputPath = results.directory;
 
-            let expected = [
-              'subdir1/',
-              'subdir1/subsubdir1/',
-              'subdir1/subsubdir1/foo.png',
-              'subdir2/',
-              'subdir2/bar.css',
-            ];
+        let expected = [
+          'subdir1/',
+          'subdir1/subsubdir1/',
+          'subdir1/subsubdir1/foo.png',
+          'subdir2/',
+          'subdir2/bar.css',
+        ];
 
-            expect(walkSync(outputPath)).to.eql(expected);
-          });
+        expect(walkSync(outputPath)).to.eql(expected);
       });
     });
 
@@ -654,7 +622,7 @@ describe('broccoli-funnel', function() {
     });
 
     describe('filtering with a `files` function', function() {
-      it('can take files as a function', function() {
+      it('can take files as a function', async function() {
         let inputPath = `${FIXTURE_INPUT}/dir1`;
         let filesByCounter = [
           // rebuild 1:
@@ -680,62 +648,61 @@ describe('broccoli-funnel', function() {
         });
 
         builder = new broccoli.Builder(tree);
+        {
+          const results = await builder.build();
+          let outputPath = results.directory;
 
-        return builder.build()
-          .then(results => {
-            let outputPath = results.directory;
+          let expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/',
+            'subdir2/bar.css',
+          ];
 
-            let expected = [
-              'subdir1/',
-              'subdir1/subsubdir1/',
-              'subdir1/subsubdir1/foo.png',
-              'subdir2/',
-              'subdir2/bar.css',
-            ];
+          expect(walkSync(outputPath)).to.eql(expected);
+        }
 
-            expect(walkSync(outputPath)).to.eql(expected);
+        {
+          // Build again
+          const results = await builder.build();
+          let outputPath = results.directory;
 
-            // Build again
-            return builder.build();
-          })
-          .then(results => {
-            let outputPath = results.directory;
+          let expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+          ];
 
-            let expected = [
-              'subdir1/',
-              'subdir1/subsubdir1/',
-              'subdir1/subsubdir1/foo.png',
-            ];
+          expect(walkSync(outputPath)).to.eql(expected);
+        }
 
-            expect(walkSync(outputPath)).to.eql(expected);
+        {
+          // Build again
+          const results = await builder.build();
+          let outputPath = results.directory;
 
-            // Build again
-            return builder.build();
-          })
-          .then(results => {
-            let outputPath = results.directory;
+          let expected = [];
 
-            let expected = [];
+          expect(walkSync(outputPath)).to.eql(expected);
+        }
 
-            expect(walkSync(outputPath)).to.eql(expected);
+        {
+          // Build again
+          const results = await builder.build();
+          let outputPath = results.directory;
 
-            // Build again
-            return builder.build();
-          })
-          .then(results => {
-            let outputPath = results.directory;
+          let expected = [
+            'subdir1/',
+            'subdir1/subsubdir2/',
+            'subdir1/subsubdir2/some.js',
+          ];
 
-            let expected = [
-              'subdir1/',
-              'subdir1/subsubdir2/',
-              'subdir1/subsubdir2/some.js',
-            ];
-
-            expect(walkSync(outputPath)).to.eql(expected);
-          });
+          expect(walkSync(outputPath)).to.eql(expected);
+        }
       });
 
-      it('can take files as a function with exclude (includeCache needs to be cleared)', function() {
+      it('can take files as a function with exclude (includeCache needs to be cleared)', async function() {
         let inputPath = `${FIXTURE_INPUT}/dir1`;
         let filesCounter = 0;
         let filesByCounter = [
@@ -755,44 +722,45 @@ describe('broccoli-funnel', function() {
 
         builder = new broccoli.Builder(tree);
 
-        return builder.build()
-          .then(results => {
-            let outputPath = results.directory;
+        {
+          const results = await builder.build();
+          let outputPath = results.directory;
 
-            let expected = [];
+          let expected = [];
 
-            expect(walkSync(outputPath)).to.eql(expected);
+          expect(walkSync(outputPath)).to.eql(expected);
 
-            // Build again
-            return builder.build();
-          })
-          .then(results => {
-            let outputPath = results.directory;
+        }
 
-            let expected = [
-              'subdir1/',
-              'subdir1/subsubdir1/',
-              'subdir1/subsubdir1/foo.png',
-            ];
+        {
+          const results = await builder.build();
+          let outputPath = results.directory;
 
-            expect(walkSync(outputPath)).to.eql(expected);
+          let expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+          ];
 
-            // Build again
-            return builder.build();
-          })
-          .then(results => {
-            let outputPath = results.directory;
+          expect(walkSync(outputPath)).to.eql(expected);
 
-            let expected = [
-              'subdir1/',
-              'subdir1/subsubdir1/',
-              'subdir1/subsubdir1/foo.png',
-              'subdir2/',
-              'subdir2/bar.css',
-            ];
+        }
 
-            expect(walkSync(outputPath)).to.eql(expected);
-          });
+        {
+          // build again
+          const results = await builder.build();
+          let outputPath = results.directory;
+
+          let expected = [
+            'subdir1/',
+            'subdir1/subsubdir1/',
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/',
+            'subdir2/bar.css',
+          ];
+
+          expect(walkSync(outputPath)).to.eql(expected);
+        }
       });
     });
 
@@ -872,7 +840,7 @@ describe('broccoli-funnel', function() {
       });
     });
 
-    it('combined filtering (regexp)', function() {
+    it('combined filtering (regexp)', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         exclude: [/.png$/, /.js$/],
@@ -880,19 +848,17 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          let expected = [
-            'root-file.txt',
-          ];
+      let expected = [
+        'root-file.txt',
+      ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+      expect(walkSync(outputPath)).to.eql(expected);
     });
 
-    it('combined filtering (globs)', function() {
+    it('combined filtering (globs)', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         exclude: ['**/*.png', '**/*.js'],
@@ -900,36 +866,32 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          let expected = [
-            'root-file.txt',
-          ];
+      let expected = [
+        'root-file.txt',
+      ];
 
-          expect(walkSync(outputPath)).to.eql(expected);
-        });
+      expect(walkSync(outputPath)).to.eql(expected);
     });
 
-    it('creates its output directory even if no files are matched', function() {
+    it('creates its output directory even if no files are matched', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
         exclude: [/.*/],
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(outputPath)).to.eql([]);
-        });
+      expect(walkSync(outputPath)).to.eql([]);
     });
   });
 
   describe('with customized destination paths', function() {
-    it('uses custom getDestinationPath function if provided', function() {
+    it('uses custom getDestinationPath function if provided', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath);
 
@@ -938,15 +900,13 @@ describe('broccoli-funnel', function() {
       };
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
+      const results = await builder.build();
+      let outputPath = results.directory;
 
-          expect(walkSync(`${outputPath}/foo`)).to.eql(walkSync(inputPath));
-        });
+      expect(walkSync(`${outputPath}/foo`)).to.eql(walkSync(inputPath));
     });
 
-    it('receives relative inputPath as argument and can escape destDir with ..', function() {
+    it('receives relative inputPath as argument and can escape destDir with ..', async function() {
       let inputPath = `${FIXTURE_INPUT}/lib`;
       let node = new Funnel(inputPath, {
         destDir: 'utility',
@@ -959,17 +919,15 @@ describe('broccoli-funnel', function() {
       });
 
       builder = new broccoli.Builder(node);
-      return builder.build()
-        .then(results => {
-          let outputPath = results.directory;
-          expect(walkSync(outputPath)).to.eql([
-            'utility.js',
-            'utility/',
-            'utility/utils.js',
-            'utility/utils/',
-            'utility/utils/foo.js',
-          ]);
-        });
+      const results = await builder.build();
+      let outputPath = results.directory;
+      expect(walkSync(outputPath)).to.eql([
+        'utility.js',
+        'utility/',
+        'utility/utils.js',
+        'utility/utils/',
+        'utility/utils/foo.js',
+      ]);
     });
   });
 

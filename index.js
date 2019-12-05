@@ -1,8 +1,7 @@
 'use strict';
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path-posix');
-const mkdirp = require('mkdirp');
 const walkSync = require('walk-sync');
 const Minimatch = require('minimatch').Minimatch;
 const arrayEqual = require('array-equal');
@@ -10,7 +9,6 @@ const Plugin = require('broccoli-plugin');
 const symlinkOrCopy = require('symlink-or-copy');
 const debug = require('debug');
 const FSTree = require('fs-tree-diff');
-const rimraf = require('rimraf');
 const BlankObject = require('blank-object');
 const heimdall = require('heimdalljs');
 
@@ -46,6 +44,18 @@ function isNotAPattern(pattern) {
   }
 
   return true;
+}
+
+function pathExists(path) {
+  // creating this function to check if file exist because of issue in node 10+
+  // ref: https://github.com/nodejs/node/issues/30538
+  try {
+    fs.accessSync(path);
+    fs.statSync(path);
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 Funnel.prototype = Object.create(Plugin.prototype);
@@ -219,7 +229,7 @@ Funnel.prototype.build = function() {
      */
 
     // This is specifically looking for broken symlinks.
-    let outputPathExists = fs.existsSync(this.outputPath);
+    let outputPathExists = pathExists(this.outputPath);
 
     // Doesn't count as a rebuild if there's not an existing outputPath.
     this._isRebuild = this._isRebuild && outputPathExists;
@@ -230,24 +240,24 @@ Funnel.prototype.build = function() {
         // Already works because of symlinks. Do nothing.
       } else if (!inputPathExists && this.allowEmpty) {
         // Make sure we're safely using a new outputPath since we were previously symlinked:
-        rimraf.sync(this.outputPath);
+        fs.removeSync(this.outputPath);
         // Create a new empty folder:
-        mkdirp.sync(this.destPath);
+        fs.mkdirSync(this.destPath, { recursive: true });
       } else { // this._isRebuild && !inputPathExists && !this.allowEmpty
         // Need to remove it on the rebuild.
         // Can blindly remove a symlink if path exists.
-        rimraf.sync(this.outputPath);
+        fs.removeSync(this.outputPath);
       }
     } else { // Not a rebuild.
       if (inputPathExists) {
         // We don't want to use the generated-for-us folder.
         // Instead let's remove it:
-        rimraf.sync(this.outputPath);
+        fs.removeSync(this.outputPath);
         // And then symlinkOrCopy over top of it:
         this._copy(inputPath, this.destPath);
       } else if (!inputPathExists && this.allowEmpty) {
         // Can't symlink nothing, so make an empty folder at `destPath`:
-        mkdirp.sync(this.destPath);
+        fs.mkdirSync(this.destPath, { recursive: true });
       } else { // !this._isRebuild && !inputPathExists && !this.allowEmpty
         throw new Error(`You specified a \`"srcDir": ${this.srcDir}\` which does not exist and did not specify \`"allowEmpty": true\`.`);
       }
@@ -262,7 +272,7 @@ Funnel.prototype.build = function() {
   } else { // !inputPathExists && this.allowEmpty
     // Just make an empty folder so that any downstream consumers who don't know
     // to ignore this on `allowEmpty` don't get trolled.
-    mkdirp(this.destPath);
+    fs.mkdirSync(this.destPath, { recursive: true });
   }
 
   this._debug('build, %o', {
@@ -490,7 +500,7 @@ Funnel.prototype._copy = function(sourcePath, destPath) {
     symlinkOrCopy.sync(sourcePath, destPath);
   } catch (e) {
     if (!fs.existsSync(destDir)) {
-      mkdirp.sync(destDir);
+      fs.mkdirSync(destDir, { recursive: true });
     }
     try {
       fs.unlinkSync(destPath);
