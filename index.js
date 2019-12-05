@@ -221,24 +221,24 @@ class Funnel extends Plugin {
           // Already works because of symlinks. Do nothing.
         } else if (!inputPathExists && this.allowEmpty) {
           // Make sure we're safely using a new outputPath since we were previously symlinked:
-          rimraf.sync(this.outputPath);
+          fs.removeSync(this.outputPath);
           // Create a new empty folder:
-          mkdirp.sync(this.destPath);
+          fs.mkdirSync(this.destPath, { recursive: true });
         } else { // this._isRebuild && !inputPathExists && !this.allowEmpty
           // Need to remove it on the rebuild.
           // Can blindly remove a symlink if path exists.
-          rimraf.sync(this.outputPath);
+          fs.removeSync(this.outputPath);
         }
       } else { // Not a rebuild.
         if (inputPathExists) {
           // We don't want to use the generated-for-us folder.
           // Instead let's remove it:
-          rimraf.sync(this.outputPath);
+          fs.removeSync(this.outputPath);
           // And then symlinkOrCopy over top of it:
           this._copy(inputPath, this.destPath);
         } else if (!inputPathExists && this.allowEmpty) {
           // Can't symlink nothing, so make an empty folder at `destPath`:
-          mkdirp.sync(this.destPath);
+          fs.mkdirSync(this.destPath, { recursive: true });
         } else { // !this._isRebuild && !inputPathExists && !this.allowEmpty
           throw new Error(`You specified a \`"srcDir": ${this.srcDir}\` which does not exist and did not specify \`"allowEmpty": true\`.`);
         }
@@ -253,7 +253,7 @@ class Funnel extends Plugin {
     } else { // !inputPathExists && this.allowEmpty
       // Just make an empty folder so that any downstream consumers who don't know
       // to ignore this on `allowEmpty` don't get trolled.
-      mkdirp(this.destPath);
+      fs.mkdirSync(this.destPath, { recursive: true });
     }
 
     this._debug('build, %o', {
@@ -473,7 +473,7 @@ class Funnel extends Plugin {
       symlinkOrCopy.sync(sourcePath, destPath);
     } catch (e) {
       if (!fs.existsSync(destDir)) {
-        mkdirp.sync(destDir);
+        fs.mkdirSync(destDir, { recursive: true });
       }
       try {
         fs.unlinkSync(destPath);
