@@ -1,5 +1,12 @@
 # master
 
+# 3.0.0
+
+- [Breaking] Upgrading to latest broccoli-plugin (Breaking only because of node version drops)
+- [Breaking] Modernize code: Class syntax, Async await etc.
+- [Breaking] Drop Node 8, as that is EOL end of the month
+- [Breaking] Drop Unsupported Node's (4, 6, 7) and add newly supported nodes (10, 12)
+
 # 2.0.2
 
 - Fix usage of `allowEmpty` when also using `include` / `exclude`
