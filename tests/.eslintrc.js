@@ -2,6 +2,9 @@ module.exports = {
   plugins: [
     'mocha'
   ],
+  parserOptions: {
+    ecmaVersion: 2017
+  },
   env: {
     mocha: true,
   },
