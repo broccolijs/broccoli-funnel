@@ -2,7 +2,6 @@
 
 const fs = require('fs-extra');
 const path = require('path-posix');
-const walkSync = require('walk-sync');
 const Minimatch = require('minimatch').Minimatch;
 const arrayEqual = require('array-equal');
 const Plugin = require('broccoli-plugin');
@@ -65,7 +64,7 @@ class Funnel extends Plugin {
       this[key] = options[key];
     }
 
-    this.destDir = this.destDir || '/';
+    this.destDir = this.destDir || './';
     this.count = 0;
 
     if (this.files && typeof this.files === 'function') {
@@ -189,7 +188,7 @@ class Funnel extends Plugin {
       }
     }
 
-    let inputPathExists = fs.existsSync(inputPath);
+    let inputPathExists = this.input.existsSync(this.srcDir || './');
 
     let linkedRoots = false;
     if (this.shouldLinkRoots()) {
@@ -210,7 +209,7 @@ class Funnel extends Plugin {
        */
 
       // This is specifically looking for broken symlinks.
-      let outputPathExists = fs.existsSync(this.outputPath);
+      let outputPathExists = this.output.existsSync('./');
 
       // Doesn't count as a rebuild if there's not an existing outputPath.
       this._isRebuild = this._isRebuild && outputPathExists;
@@ -223,7 +222,7 @@ class Funnel extends Plugin {
           // Make sure we're safely using a new outputPath since we were previously symlinked:
           fs.removeSync(this.outputPath);
           // Create a new empty folder:
-          fs.mkdirSync(this.destPath, { recursive: true });
+          this.output.mkdirSync(this.destDir, { recursive: true });
         } else { // this._isRebuild && !inputPathExists && !this.allowEmpty
           // Need to remove it on the rebuild.
           // Can blindly remove a symlink if path exists.
@@ -235,10 +234,10 @@ class Funnel extends Plugin {
           // Instead let's remove it:
           fs.removeSync(this.outputPath);
           // And then symlinkOrCopy over top of it:
-          this._copy(inputPath, this.destPath);
+          this._copy(inputPath, this.destPath, this.destDir);
         } else if (!inputPathExists && this.allowEmpty) {
           // Can't symlink nothing, so make an empty folder at `destPath`:
-          fs.mkdirSync(this.destPath, { recursive: true });
+          this.output.mkdirSync(this.destDir, { recursive: true });
         } else { // !this._isRebuild && !inputPathExists && !this.allowEmpty
           throw new Error(`You specified a \`"srcDir": ${this.srcDir}\` which does not exist and did not specify \`"allowEmpty": true\`.`);
         }
@@ -308,9 +307,9 @@ class Funnel extends Plugin {
     } else {
 
       if (this._matchedWalk) {
-        entries = walkSync.entries(inputPath, { globs: this.include, ignore: this.exclude });
+        entries = this.input.entries('.', { globs: this.include, ignore: this.exclude });
       } else {
-        entries = walkSync.entries(inputPath);
+        entries = this.input.entries('.');
       }
 
       entries = this._processEntries(entries);
@@ -359,11 +358,11 @@ class Funnel extends Plugin {
         break;
       case 'rmdir' :
         stats.rmdir++;
-        fs.rmdirSync(outputPath);
+        this.output.rmdirSync(outputRelative);
         break;
       case 'mkdir' :
         stats.mkdir++;
-        fs.mkdirSync(outputPath);
+        this.output.mkdirSync(outputRelative);
         break;
       case 'change':
         stats.change++;
@@ -462,18 +461,18 @@ class Funnel extends Plugin {
     throw new Error(`Pattern \`${pattern}\` was not a RegExp, Glob, or Function.`);
   }
 
-  processFile(sourcePath, destPath /*, relativePath */) {
-    this._copy(sourcePath, destPath);
+  processFile(sourcePath, destPath, relativePath) {
+    this._copy(sourcePath, destPath, relativePath);
   }
 
-  _copy(sourcePath, destPath) {
-    let destDir = path.dirname(destPath);
+  _copy(sourcePath, destPath, relativePath) {
+    let destDir = path.dirname(relativePath);
 
     try {
       symlinkOrCopy.sync(sourcePath, destPath);
     } catch (e) {
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, { recursive: true });
+      if (!this.output.existsSync(destDir)) {
+        this.output.mkdirSync(destDir, { recursive: true });
       }
       try {
         fs.unlinkSync(destPath);
