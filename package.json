@@ -27,7 +27,7 @@
   "dependencies": {
     "array-equal": "^1.0.0",
     "blank-object": "^1.0.1",
-    "broccoli-plugin": "^3.0.0",
+    "broccoli-plugin": "^4.0.0",
     "debug": "^4.1.1",
     "fast-ordered-set": "^1.0.0",
     "fs-tree-diff": "^2.0.1",

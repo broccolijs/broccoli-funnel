@@ -1,11 +1,9 @@
 'use strict';
 
-const fs = require('fs-extra');
 const path = require('path-posix');
 const Minimatch = require('minimatch').Minimatch;
 const arrayEqual = require('array-equal');
 const Plugin = require('broccoli-plugin');
-const symlinkOrCopy = require('symlink-or-copy');
 const debug = require('debug');
 const FSTree = require('fs-tree-diff');
 const BlankObject = require('blank-object');
@@ -220,19 +218,19 @@ class Funnel extends Plugin {
           // Already works because of symlinks. Do nothing.
         } else if (!inputPathExists && this.allowEmpty) {
           // Make sure we're safely using a new outputPath since we were previously symlinked:
-          fs.removeSync(this.outputPath);
+          this.output.rmdirSync('./', { recursive: true });
           // Create a new empty folder:
           this.output.mkdirSync(this.destDir, { recursive: true });
         } else { // this._isRebuild && !inputPathExists && !this.allowEmpty
           // Need to remove it on the rebuild.
           // Can blindly remove a symlink if path exists.
-          fs.removeSync(this.outputPath);
+          this.output.rmdirSync('./', { recursive: true });
         }
       } else { // Not a rebuild.
         if (inputPathExists) {
           // We don't want to use the generated-for-us folder.
           // Instead let's remove it:
-          fs.removeSync(this.outputPath);
+          this.output.rmdirSync('./', { recursive: true });
           // And then symlinkOrCopy over top of it:
           this._copy(inputPath, this.destPath, this.destDir);
         } else if (!inputPathExists && this.allowEmpty) {
@@ -252,7 +250,7 @@ class Funnel extends Plugin {
     } else { // !inputPathExists && this.allowEmpty
       // Just make an empty folder so that any downstream consumers who don't know
       // to ignore this on `allowEmpty` don't get trolled.
-      fs.mkdirSync(this.destPath, { recursive: true });
+      this.output.mkdirSync(this.destDir, { recursive: true });
     }
 
     this._debug('build, %o', {
@@ -354,7 +352,7 @@ class Funnel extends Plugin {
       case 'unlink' :
         stats.unlink++;
 
-        fs.unlinkSync(outputPath);
+        this.output.unlinkSync(outputRelative);
         break;
       case 'rmdir' :
         stats.rmdir++;
@@ -466,20 +464,21 @@ class Funnel extends Plugin {
   }
 
   _copy(sourcePath, destPath, relativePath) {
+    if (this.getDestinationPath) {
+      relativePath = this.lookupDestinationPath(relativePath);
+    }
     let destDir = path.dirname(relativePath);
 
     try {
-      symlinkOrCopy.sync(sourcePath, destPath);
+      this.output.symlinkOrCopySync(sourcePath, relativePath);
     } catch (e) {
-      if (!this.output.existsSync(destDir)) {
-        this.output.mkdirSync(destDir, { recursive: true });
-      }
+      this.output.mkdirSync(destDir, { recursive: true });
       try {
-        fs.unlinkSync(destPath);
+        this.output.unlinkSync(relativePath);
       } catch (e) {
         // swallow the error
       }
-      symlinkOrCopy.sync(sourcePath, destPath);
+      this.output.symlinkOrCopySync(sourcePath, relativePath);
     }
   }
 }
