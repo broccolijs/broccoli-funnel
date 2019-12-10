@@ -1,5 +1,11 @@
 # master
 
+# 3.0.1
+
+- Update all deps
+- Removing all the fs operation. Use input/output
+- Migrating to input/output facade
+
 # 3.0.0
 
 - [Breaking] Upgrading to latest broccoli-plugin (Breaking only because of node version drops)
