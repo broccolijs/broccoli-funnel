@@ -524,6 +524,32 @@ describe('broccoli-funnel', function() {
 
         expect(walkSync(output.path())).to.eql(expected);
       });
+
+      it('can take a list of files with destDir', async function() {
+        let inputPath = `${FIXTURE_INPUT}/dir1`;
+        let node = new Funnel(inputPath, {
+          files: [
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/bar.css',
+          ],
+          destDir: 'test/assert',
+        });
+
+        output = createBuilder(node);
+        await output.build();
+
+        let expected = [
+          'test/',
+          'test/assert/',
+          'test/assert/subdir1/',
+          'test/assert/subdir1/subsubdir1/',
+          'test/assert/subdir1/subsubdir1/foo.png',
+          'test/assert/subdir2/',
+          'test/assert/subdir2/bar.css',
+        ];
+
+        expect(walkSync(output.path())).to.eql(expected);
+      });
     });
 
     describe('`files` is incompatible with filters', function() {
