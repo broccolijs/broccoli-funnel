@@ -8,6 +8,7 @@ const debug = require('debug');
 const FSTree = require('fs-tree-diff');
 const BlankObject = require('blank-object');
 const heimdall = require('heimdalljs');
+const fs = require('fs');
 
 function ApplyPatchesSchema() {
   this.mkdir = 0;
@@ -40,6 +41,19 @@ function isNotAPattern(pattern) {
     }
   }
 
+  return true;
+}
+function existsSync(path) {
+  let error = {};
+  try {
+    fs.accessSync(path);
+    fs.statSync(path);
+  } catch (err) {
+    error = err;
+  }
+  if (error.errno && error.errno !== 0) {
+    return false;
+  }
   return true;
 }
 
@@ -208,6 +222,12 @@ class Funnel extends Plugin {
 
       // This is specifically looking for broken symlinks.
       let outputPathExists = this.output.existsSync('./');
+      // We need to keep this till node 10,12 get fix for windows broken symlink issue.
+      // https://github.com/nodejs/node/issues/30538
+      let isWin = process.platform === 'win32';
+      if (isWin) {
+        outputPathExists = existsSync(this.outputPath);
+      }
 
       // Doesn't count as a rebuild if there's not an existing outputPath.
       this._isRebuild = this._isRebuild && outputPathExists;
