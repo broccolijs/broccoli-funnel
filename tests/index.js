@@ -256,6 +256,26 @@ describe('broccoli-funnel', function() {
       ]);
     });
 
+    it('accepts destDir with leading slash', async function() {
+      let inputPath = `${FIXTURE_INPUT}/lib/utils`;
+
+      let node = new Funnel(inputPath, {
+        destDir: '/foo',
+
+        processFile() {
+          /* do nothing */
+        },
+      });
+
+      output = createBuilder(node);
+      await output.build();
+
+      expect(walkSync(output.path())).to.eql([
+        'foo/',
+        'foo/foo.js',
+      ]);
+    });
+
     it('works with mixed glob and RegExp includes', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
