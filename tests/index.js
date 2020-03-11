@@ -256,6 +256,26 @@ describe('broccoli-funnel', function() {
       ]);
     });
 
+    it('accepts destDir with leading slash', async function() {
+      let inputPath = `${FIXTURE_INPUT}/lib/utils`;
+
+      let node = new Funnel(inputPath, {
+        destDir: '/foo',
+
+        processFile() {
+          /* do nothing */
+        },
+      });
+
+      output = createBuilder(node);
+      await output.build();
+
+      expect(walkSync(output.path())).to.eql([
+        'foo/',
+        'foo/foo.js',
+      ]);
+    });
+
     it('works with mixed glob and RegExp includes', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1`;
       let node = new Funnel(inputPath, {
@@ -520,6 +540,32 @@ describe('broccoli-funnel', function() {
           'subdir1/subsubdir1/foo.png',
           'subdir2/',
           'subdir2/bar.css',
+        ];
+
+        expect(walkSync(output.path())).to.eql(expected);
+      });
+
+      it('can take a list of files with destDir', async function() {
+        let inputPath = `${FIXTURE_INPUT}/dir1`;
+        let node = new Funnel(inputPath, {
+          files: [
+            'subdir1/subsubdir1/foo.png',
+            'subdir2/bar.css',
+          ],
+          destDir: 'test/assert',
+        });
+
+        output = createBuilder(node);
+        await output.build();
+
+        let expected = [
+          'test/',
+          'test/assert/',
+          'test/assert/subdir1/',
+          'test/assert/subdir1/subsubdir1/',
+          'test/assert/subdir1/subsubdir1/foo.png',
+          'test/assert/subdir2/',
+          'test/assert/subdir2/bar.css',
         ];
 
         expect(walkSync(output.path())).to.eql(expected);

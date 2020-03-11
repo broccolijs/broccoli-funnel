@@ -252,7 +252,7 @@ class Funnel extends Plugin {
           // Instead let's remove it:
           this.output.rmdirSync('./', { recursive: true });
           // And then symlinkOrCopy over top of it:
-          this._copy(inputPath, this.destPath, this.destDir);
+          this._copy(inputPath, this.destPath, './');
         } else if (!inputPathExists && this.allowEmpty) {
           // Can't symlink nothing, so make an empty folder at `destPath`:
           this.output.mkdirSync(this.destDir, { recursive: true });
@@ -484,9 +484,7 @@ class Funnel extends Plugin {
   }
 
   _copy(sourcePath, destPath, relativePath) {
-    if (this.getDestinationPath) {
-      relativePath = this.lookupDestinationPath(relativePath);
-    }
+    relativePath = this.lookupDestinationPath(relativePath);
     let destDir = path.dirname(relativePath);
 
     try {
