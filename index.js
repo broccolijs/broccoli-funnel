@@ -187,6 +187,7 @@ class Funnel extends Plugin {
 
     let inputPath = this.inputPaths[0];
     if (this.srcDir) {
+      this.srcDir = ensureRelative(this.srcDir);
       inputPath = path.join(inputPath, this.srcDir);
     }
 
