@@ -163,6 +163,23 @@ describe('broccoli-funnel', function() {
       expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
     });
 
+    it('accepts srcDir with leading slash', async function() {
+      let assertions = 0;
+
+      let node = new Funnel('.', {
+        srcDir: '/node_modules',
+        destDir: 'foo',
+      });
+
+      output = createBuilder(node);
+      try {
+        await output.build();
+      } catch (error) {
+        assertions++;
+      }
+      expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
+    });
+
     it('throws error on unspecified allowEmpty', async function() {
       let assertions = 0;
       let inputPath = `${FIXTURE_INPUT}/dir1`;
