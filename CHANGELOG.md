@@ -1,3 +1,20 @@
+## v3.0.3 (2020-05-09)
+
+#### :bug: Bug Fix
+* [#128](https://github.com/broccolijs/broccoli-funnel/pull/128) Support `srcDir` with leading slash ([@Gaurav0](https://github.com/Gaurav0))
+* [#123](https://github.com/broccolijs/broccoli-funnel/pull/123) Ensure `lookupDestinationPath` will handle relative path ([@SparshithNR](https://github.com/SparshithNR))
+
+#### :house: Internal
+* [#131](https://github.com/broccolijs/broccoli-funnel/pull/131) Add release automation. ([@rwjblue](https://github.com/rwjblue))
+* [#130](https://github.com/broccolijs/broccoli-funnel/pull/130) Fix test to actually check generated files with destDir ([@mmun](https://github.com/mmun))
+
+#### Committers: 4
+- Gaurav Munjal ([@Gaurav0](https://github.com/Gaurav0))
+- Martin Muñoz ([@mmun](https://github.com/mmun))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+- SparshithNRai ([@SparshithNR](https://github.com/SparshithNR))
+
+
 # master
 
 # 3.0.1
