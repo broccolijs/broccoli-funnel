@@ -2,28 +2,25 @@
   "name": "broccoli-funnel",
   "version": "3.0.2",
   "description": "Broccoli plugin that allows you to filter files selected from an input node down based on regular expressions.",
-  "main": "index.js",
-  "author": "Robert Jackson",
-  "license": "MIT",
+  "keywords": [
+    "broccoli-plugin",
+    "javascript"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/broccolijs/broccoli-funnel.git"
   },
+  "license": "MIT",
+  "author": "Robert Jackson",
+  "main": "index.js",
   "files": [
     "index.js"
   ],
-  "engines": {
-    "node": "10.* || >= 12.*"
-  },
   "scripts": {
     "test": "mocha tests/",
     "test:debug": "mocha debug tests/",
     "test:debugger": "mocha --inspect-brk tests/"
   },
-  "keywords": [
-    "broccoli-plugin",
-    "javascript"
-  ],
   "dependencies": {
     "array-equal": "^1.0.0",
     "blank-object": "^1.0.1",
@@ -43,6 +40,29 @@
     "fs-extra": "^8.1.0",
     "mocha": "~6.2.1",
     "mocha-eslint": "^6.0.0",
+    "release-it": "^13.5.7",
+    "release-it-lerna-changelog": "^2.3.0",
     "rimraf": "^3.0.0"
+  },
+  "engines": {
+    "node": "10.* || >= 12.*"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "release-it": {
+    "plugins": {
+      "release-it-lerna-changelog": {
+        "infile": "CHANGELOG.md",
+        "launchEditor": true
+      }
+    },
+    "git": {
+      "tagName": "v${version}"
+    },
+    "github": {
+      "release": true,
+      "tokenRef": "GITHUB_AUTH"
+    }
   }
 }
