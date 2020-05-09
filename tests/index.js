@@ -255,10 +255,6 @@ describe('broccoli-funnel', function() {
       let node = new Funnel(inputPath, {
         include: [/.png$/, /.js$/],
         destDir: 'foo',
-
-        processFile() {
-          /* do nothing */
-        },
       });
 
       output = createBuilder(node);
@@ -269,7 +265,9 @@ describe('broccoli-funnel', function() {
         'foo/',
         'foo/subdir1/',
         'foo/subdir1/subsubdir1/',
+        'foo/subdir1/subsubdir1/foo.png',
         'foo/subdir1/subsubdir2/',
+        'foo/subdir1/subsubdir2/some.js',
       ]);
     });
 
