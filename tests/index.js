@@ -451,6 +451,25 @@ describe('broccoli-funnel', function() {
       expect(walkSync(outputPath)).to.eql(walkSync(restrictedInputPath));
     });
 
+    it('supports "srcDir", "destDir", and "exclude" together', async function() {
+      let inputPath = `${FIXTURE_INPUT}/dir1`;
+      let node = new Funnel(inputPath, {
+        srcDir: 'subdir1',
+        destDir: 'myDest',
+        exclude: ['whatever'],
+      });
+
+      output = createBuilder(node);
+      await output.build();
+      let outputPath = output.path();
+      let restrictedInputPath = `${inputPath}/subdir1`;
+
+      expect(walkSync(`${outputPath}/myDest`)).to.eql(walkSync(restrictedInputPath));
+      await output.build();
+      expect(walkSync(`${outputPath}/myDest`)).to.eql(walkSync(restrictedInputPath));
+    });
+
+
     it('matches *.css', async function() {
       let inputPath = `${FIXTURE_INPUT}/dir1/subdir2`;
       let node = new Funnel(inputPath, {

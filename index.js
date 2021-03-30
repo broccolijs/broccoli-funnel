@@ -326,9 +326,9 @@ class Funnel extends Plugin {
     } else {
 
       if (this._matchedWalk) {
-        entries = this.input.entries('.', { globs: this.include, ignore: this.exclude });
+        entries = this.input.entries(this.srcDir || './', { globs: this.include, ignore: this.exclude });
       } else {
-        entries = this.input.entries('.');
+        entries = this.input.entries(this.srcDir || './');
       }
 
       entries = this._processEntries(entries);
