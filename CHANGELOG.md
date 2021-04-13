@@ -1,3 +1,12 @@
+## v3.0.4 (2021-04-13)
+
+#### :bug: Bug Fix
+* [#135](https://github.com/broccolijs/broccoli-funnel/pull/135) fix srcDir + filtering ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+
 ## v3.0.3 (2020-05-09)
 
 #### :bug: Bug Fix
