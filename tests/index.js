@@ -15,6 +15,7 @@ require('mocha-eslint')([
 });
 
 const Funnel = require('..');
+const ROOT = process.cwd();
 
 describe('broccoli-funnel', function() {
   let input, output, FIXTURE_INPUT;
@@ -49,6 +50,8 @@ describe('broccoli-funnel', function() {
   });
 
   afterEach(function() {
+    process.chdir(ROOT);
+
     input.dispose();
     output && output.dispose();
   });
@@ -178,6 +181,24 @@ describe('broccoli-funnel', function() {
         assertions++;
       }
       expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
+    });
+
+    it("does not mistake a folder within working directory as the srcDir being present", async function() {
+      input.write({
+        someDir: {},
+        otherDir: {},
+      });
+      process.chdir(input.path());
+
+      let node = new Funnel(input.path("otherDir"), {
+        allowEmpty: true,
+        srcDir: "someDir",
+        destDir: "my-output",
+      });
+      output = createBuilder(node);
+      await output.build();
+
+      expect(walkSync(output.path())).to.eql(["my-output/"]);
     });
 
     it("missing srcDir with allowEmpty results in empty destDir", async function() {
