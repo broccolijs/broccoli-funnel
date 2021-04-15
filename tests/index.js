@@ -180,14 +180,16 @@ describe('broccoli-funnel', function() {
       expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
     });
 
-    it('missing srcDir with allowEmpty results in empty destDir', async function() {
+    it("missing srcDir with allowEmpty results in empty destDir", async function() {
       let node = new Funnel(FIXTURE_INPUT, {
         allowEmpty: true,
-        srcDir: 'i-dont-exist',
-        destDir: 'my-output',
+        srcDir: "i-dont-exist",
+        destDir: "my-output",
       });
       output = createBuilder(node);
-      expect(walkSync(output.path())).to.eql(['my-output/']);
+      await output.build();
+
+      expect(walkSync(output.path())).to.eql(["my-output/"]);
     });
 
     it('throws error on unspecified allowEmpty', async function() {
