@@ -1,3 +1,16 @@
+## v3.0.5 (2021-05-03)
+
+#### :bug: Bug Fix
+* [#136](https://github.com/broccolijs/broccoli-funnel/pull/136) Ensure current working directory files do not affect `broccoli-funnel` operation ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#138](https://github.com/broccolijs/broccoli-funnel/pull/138) Add GH Actions CI ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+
+
 ## v3.0.4 (2021-04-13)
 
 #### :bug: Bug Fix
