@@ -1,3 +1,18 @@
+## v3.0.6 (2021-05-26)
+
+#### :bug: Bug Fix
+* [#141](https://github.com/broccolijs/broccoli-funnel/pull/141) Stop gathering instantiation stack manually. ([@rwjblue](https://github.com/rwjblue))
+
+#### :house: Internal
+* [#145](https://github.com/broccolijs/broccoli-funnel/pull/145) Swap from yarn@1 to npm ([@rwjblue](https://github.com/rwjblue))
+* [#144](https://github.com/broccolijs/broccoli-funnel/pull/144) Remove unused dependency (fast-ordered-set) ([@rwjblue](https://github.com/rwjblue))
+* [#143](https://github.com/broccolijs/broccoli-funnel/pull/143) Remove usage of path-posix library. ([@rwjblue](https://github.com/rwjblue))
+* [#142](https://github.com/broccolijs/broccoli-funnel/pull/142) Remove blank-object dependency. ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 1
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+
+
 ## v3.0.5 (2021-05-03)
 
 #### :bug: Bug Fix
