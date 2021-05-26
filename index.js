@@ -1,6 +1,6 @@
 'use strict';
 
-const path = require('path-posix');
+const path = require('path').posix;
 const Minimatch = require('minimatch').Minimatch;
 const arrayEqual = require('array-equal');
 const Plugin = require('broccoli-plugin');
