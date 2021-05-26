@@ -6,7 +6,6 @@ const arrayEqual = require('array-equal');
 const Plugin = require('broccoli-plugin');
 const debug = require('debug');
 const FSTree = require('fs-tree-diff');
-const BlankObject = require('blank-object');
 const heimdall = require('heimdalljs');
 const fs = require('fs');
 
@@ -21,13 +20,6 @@ function ApplyPatchesSchema() {
   this.linked = 0;
 }
 
-function makeDictionary() {
-  let cache = new BlankObject();
-
-  cache['_dict'] = null;
-  delete cache['_dict'];
-  return cache;
-}
 // copied mostly from node-glob cc @isaacs
 function isNotAPattern(pattern) {
   let set = new Minimatch(pattern).set;
@@ -65,8 +57,8 @@ class Funnel extends Plugin {
       needsCache: false,
     });
 
-    this._includeFileCache = makeDictionary();
-    this._destinationPathCache = makeDictionary();
+    this._includeFileCache = Object.create(null);
+    this._destinationPathCache = Object.create(null);
     this._currentTree = new FSTree();
     this._isRebuild = false;
 
@@ -195,7 +187,7 @@ class Funnel extends Plugin {
 
       // Blow away the include cache if the list of files is new
       if (this.lastFiles !== undefined && !arrayEqual(this.lastFiles, this.files)) {
-        this._includeFileCache = makeDictionary();
+        this._includeFileCache = Object.create(null);
       }
     }
 

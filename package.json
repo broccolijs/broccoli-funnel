@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "array-equal": "^1.0.0",
-    "blank-object": "^1.0.1",
     "broccoli-plugin": "^4.0.7",
     "debug": "^4.1.1",
     "fast-ordered-set": "^1.0.0",
