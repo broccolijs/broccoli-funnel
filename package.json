@@ -25,7 +25,6 @@
     "array-equal": "^1.0.0",
     "broccoli-plugin": "^4.0.7",
     "debug": "^4.1.1",
-    "fast-ordered-set": "^1.0.0",
     "fs-tree-diff": "^2.0.1",
     "heimdalljs": "^0.2.0",
     "minimatch": "^3.0.0",
