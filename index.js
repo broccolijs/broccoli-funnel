@@ -104,8 +104,6 @@ class Funnel extends Plugin {
     this._setupFilter('exclude');
 
     this._matchedWalk = this.canMatchWalk();
-
-    this._instantiatedStack = (new Error()).stack;
     this._buildStart = undefined;
   }
 
