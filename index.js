@@ -50,8 +50,9 @@ function existsSync(path) {
 }
 
 class Funnel extends Plugin {
-  constructor(inputNode, options = {}) {
-    super([inputNode], {
+  constructor(inputs, options = {}) {
+    let inputNodes = Array.isArray(inputs) ? inputs : [inputs];
+    super(inputNodes, {
       annotation: options.annotation,
       persistentOutput: true,
       needsCache: false,
