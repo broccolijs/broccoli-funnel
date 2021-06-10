@@ -1,3 +1,12 @@
+## v3.0.7 (2021-06-10)
+
+#### :rocket: Enhancement
+* [#146](https://github.com/broccolijs/broccoli-funnel/pull/146) Allow subclasses to add additional input nodes. ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 1
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+
+
 ## v3.0.6 (2021-05-26)
 
 #### :bug: Bug Fix
