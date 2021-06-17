@@ -1,3 +1,12 @@
+## v3.0.8 (2021-06-17)
+
+#### :bug: Bug Fix
+* [#147](https://github.com/broccolijs/broccoli-funnel/pull/147) Ensure adding additional trees does not affect include/exclude results. ([@rwjblue](https://github.com/rwjblue))
+
+#### Committers: 1
+- Robert Jackson ([@rwjblue](https://github.com/rwjblue))
+
+
 ## v3.0.7 (2021-06-10)
 
 #### :rocket: Enhancement
