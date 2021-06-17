@@ -1167,5 +1167,39 @@ describe('broccoli-funnel', function() {
 
       expect(walkSync(outputPath)).to.eql(['lol/', 'lol/foo.js']);
     });
+
+    it('providing additional trees does not change matched files', async function() {
+      class FunnelSubclass extends Funnel.Funnel {
+        constructor(inputNode, options) {
+          super([inputNode, input.path('dir1/subdir1/subsubdir2')], options);
+
+          this._hasBuilt = false;
+        }
+
+        build() {
+          if (this._hasBuilt === false) {
+            if (!fs.existsSync(`${this.inputPaths[1]}/some.js`)) {
+              throw new Error('Could not find file!!!');
+            }
+            // set custom destDir to ensure our custom build code ran
+            this.destDir = 'lol';
+            this._hasBuilt = true;
+          }
+
+          return super.build();
+        }
+      }
+
+      let inputPath = input.path('lib/utils');
+      let node = new FunnelSubclass(inputPath, {
+        include: ['**/*.js'],
+      });
+      output = createBuilder(node);
+
+      await output.build();
+      let outputPath = output.path();
+
+      expect(walkSync(outputPath)).to.eql(['lol/', 'lol/foo.js']);
+    });
   });
 });

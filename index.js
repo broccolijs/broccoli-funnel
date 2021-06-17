@@ -192,7 +192,7 @@ class Funnel extends Plugin {
       }
     }
 
-    let inputPathExists = this.input.existsSync(this.srcDir || './');
+    let inputPathExists = this.input.at(0).fs.existsSync(this.srcDir || './');
 
     let linkedRoots = false;
     if (this.shouldLinkRoots()) {
@@ -317,9 +317,9 @@ class Funnel extends Plugin {
     } else {
 
       if (this._matchedWalk) {
-        entries = this.input.entries(this.srcDir || './', { globs: this.include, ignore: this.exclude });
+        entries = this.input.at(0).entries(this.srcDir || './', { globs: this.include, ignore: this.exclude });
       } else {
-        entries = this.input.entries(this.srcDir || './');
+        entries = this.input.at(0).entries(this.srcDir || './');
       }
 
       entries = this._processEntries(entries);
