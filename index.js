@@ -483,10 +483,15 @@ class Funnel extends Plugin {
       this.output.symlinkOrCopySync(sourcePath, relativePath);
     } catch (e) {
       this.output.mkdirSync(destDir, { recursive: true });
-      try {
-        this.output.unlinkSync(relativePath);
-      } catch (e) {
-        // swallow the error
+
+      // existsSync is fast, while unlinkSync is expensive,
+      // and extra expensive when it throws
+      if (this.output.existsSync(relativePath)) {
+        try {
+          this.output.unlinkSync(relativePath);
+        } catch (e) {
+          // swallow the error
+        }
       }
       this.output.symlinkOrCopySync(sourcePath, relativePath);
     }
