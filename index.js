@@ -1,13 +1,15 @@
 'use strict';
 
-const path = require('path').posix;
-const Minimatch = require('minimatch').Minimatch;
-const arrayEqual = require('array-equal');
-const Plugin = require('broccoli-plugin');
-const debug = require('debug');
-const FSTree = require('fs-tree-diff');
-const heimdall = require('heimdalljs');
-const fs = require('fs');
+import { posix as path } from 'path'
+import minimatch from 'minimatch';
+import arrayEqual from 'array-equal';
+import Plugin from 'broccoli-plugin';
+import debug from 'debug';
+import FSTree from 'fs-tree-diff';
+import heimdall from 'heimdalljs';
+import fs from 'fs';
+
+const { Minimatch } = minimatch;
 
 function ApplyPatchesSchema() {
   this.mkdir = 0;
@@ -49,7 +51,7 @@ function existsSync(path) {
   return true;
 }
 
-class Funnel extends Plugin {
+export class Funnel extends Plugin {
   constructor(inputs, options = {}) {
     let inputNodes = Array.isArray(inputs) ? inputs : [inputs];
     super(inputNodes, {
@@ -504,8 +506,6 @@ function ensureRelative(string) {
   return string;
 }
 
-module.exports = function funnel(...params) {
+export default function funnel(...params) {
   return new Funnel(...params);
 };
-
-module.exports.Funnel = Funnel;

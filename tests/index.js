@@ -1,13 +1,13 @@
 'use strict';
 
-const fs = require('fs-extra');
-const path = require('path');
-const expect = require('chai').expect;
-const walkSync = require('walk-sync');
-const rimraf = require('rimraf');
-const { createBuilder, createTempDir } = require('broccoli-test-helper');
+import fs from 'fs-extra';
+import path from 'path';
+import { expect } from 'chai';
+import walkSync from 'walk-sync';
+import rimraf from 'rimraf';
+import { createBuilder, createTempDir } from 'broccoli-test-helper';
 
-const Funnel = require('..');
+import Funnel, { Funnel as FunnelClass } from '../index.js';
 const ROOT = process.cwd();
 
 describe('broccoli-funnel', function() {
@@ -1105,7 +1105,7 @@ describe('broccoli-funnel', function() {
 
   describe('subclassing', function() {
     it('can be subclassed, simple destDir modification', async function() {
-      class FunnelSubclass extends Funnel.Funnel {
+      class FunnelSubclass extends FunnelClass {
         constructor(input, options) {
           super(input, options);
 
@@ -1133,7 +1133,7 @@ describe('broccoli-funnel', function() {
     });
 
     it('subclasses can provide additional trees', async function() {
-      class FunnelSubclass extends Funnel.Funnel {
+      class FunnelSubclass extends FunnelClass {
         constructor(inputNode, options) {
           super([inputNode, input.path('dir1/subdir2')], options);
 
@@ -1165,7 +1165,7 @@ describe('broccoli-funnel', function() {
     });
 
     it('providing additional trees does not change matched files', async function() {
-      class FunnelSubclass extends Funnel.Funnel {
+      class FunnelSubclass extends FunnelClass {
         constructor(inputNode, options) {
           super([inputNode, input.path('dir1/subdir1/subsubdir2')], options);
 
