@@ -29,7 +29,7 @@
     "debug": "^4.1.1",
     "fs-tree-diff": "^2.0.1",
     "heimdalljs": "^0.2.0",
-    "minimatch": "^3.0.0",
+    "minimatch": "^10.2.5",
     "walk-sync": "^2.0.2"
   },
   "devDependencies": {
