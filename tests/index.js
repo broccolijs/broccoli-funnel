@@ -79,6 +79,9 @@ describe('broccoli-funnel', function() {
   });
 
   describe('linkRoots', function() {
+    // symbolic links can be quite slow on windows :(
+    this.timeout(10000);
+
     it('links input to output if possible', async function() {
       let node = new Funnel(FIXTURE_INPUT);
       output = createBuilder(node);

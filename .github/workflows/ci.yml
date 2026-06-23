@@ -2,9 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches:
+      - main
+      - master
+  pull_request: {}
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -12,15 +17,24 @@ jobs:
     runs-on: "${{matrix.os}}-latest"
 
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [10.x, 12.x, 14.x, 15.x]
-        os: ['ubuntu', 'windows']
+        node-version:
+          - 20
+          - 22
+          - 24
+          - 26
+        os: 
+          - ubuntu
+          - windows
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
+    - uses: pnpm/action-setup@v6
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: npm test
+        cache: pnpm
+    - run: pnpm install
+    - run: pnpm test
