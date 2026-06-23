@@ -7,13 +7,6 @@ const walkSync = require('walk-sync');
 const rimraf = require('rimraf');
 const { createBuilder, createTempDir } = require('broccoli-test-helper');
 
-require('mocha-eslint')([
-  'tests/index.js',
-  'index.js',
-], {
-  timeout: 5000,
-});
-
 const Funnel = require('..');
 const ROOT = process.cwd();
 
@@ -163,7 +156,7 @@ describe('broccoli-funnel', function() {
       output = createBuilder(node);
       try {
         await output.build();
-      } catch (error) {
+      } catch {
         assertions++;
       }
       expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');
@@ -180,7 +173,7 @@ describe('broccoli-funnel', function() {
       output = createBuilder(node);
       try {
         await output.build();
-      } catch (error) {
+      } catch {
         assertions++;
       }
       expect(assertions).to.equal(0, 'Build did not throw an error, relative path traversal worked.');

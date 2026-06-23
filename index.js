@@ -224,7 +224,7 @@ class Funnel extends Plugin {
       // Doesn't count as a rebuild if there's not an existing outputPath.
       this._isRebuild = this._isRebuild && outputPathExists;
 
-      /*eslint-disable no-lonely-if*/
+       
       if (this._isRebuild) {
         if (inputPathExists) {
           // Already works because of symlinks. Do nothing.
@@ -252,7 +252,7 @@ class Funnel extends Plugin {
           throw new Error(`You specified a \`"srcDir": ${this.srcDir}\` which does not exist and did not specify \`"allowEmpty": true\`.`);
         }
       }
-      /*eslint-enable no-lonely-if*/
+       
 
       this._isRebuild = true;
     } else if (inputPathExists) {
@@ -481,11 +481,11 @@ class Funnel extends Plugin {
 
     try {
       this.output.symlinkOrCopySync(sourcePath, relativePath);
-    } catch (e) {
+    } catch {
       this.output.mkdirSync(destDir, { recursive: true });
       try {
         this.output.unlinkSync(relativePath);
-      } catch (e) {
+      } catch {
         // swallow the error
       }
       this.output.symlinkOrCopySync(sourcePath, relativePath);
