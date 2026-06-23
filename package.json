@@ -30,7 +30,7 @@
     "fs-tree-diff": "^2.0.1",
     "heimdalljs": "^0.2.0",
     "minimatch": "^10.2.5",
-    "walk-sync": "^2.0.2"
+    "walk-sync": "^4.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
