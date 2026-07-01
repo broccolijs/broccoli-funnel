@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       array-equal:
-        specifier: ^1.0.0
-        version: 1.0.2
+        specifier: ^2.0.0
+        version: 2.0.0
       broccoli-plugin:
         specifier: ^5.0.0
         version: 5.0.0
@@ -363,8 +363,9 @@ packages:
     resolution: {integrity: sha512-LHE+8BuR7RYGDKvnrmcuSq3tDcKv9OFEXQt/HpbZhY7V6h0zlUXutnAD82GiFx9rdieCMjkvtcsPqBwgUl1Iiw==}
     engines: {node: '>= 0.4'}
 
-  array-equal@1.0.2:
-    resolution: {integrity: sha512-gUHx76KtnhEgB3HOuFYiCm3FIdEs6ocM2asHvNTkfu/Y09qQVrrVVaOKENmS2KkSaGoxgXNqC+ZVtR/n0MOkSA==}
+  array-equal@2.0.0:
+    resolution: {integrity: sha512-omyuT98dFFarEaqhHvhzcJ6/lX+qxT1kzdNzaAp3Dr/6AkmU2+tXeDXYkdB8n84w0/QhrX6FFRUY6l7U250oCQ==}
+    engines: {node: '>=20'}
 
   array-unique@0.3.2:
     resolution: {integrity: sha512-SleRWjh9JUud2wH1hPs9rZBZ33H6T9HOiL0uwGnGx9FpE6wKGyfWugmbkEOIs6qWrZhg0LWeLziLrEwQJhs5mQ==}
@@ -2827,7 +2828,7 @@ snapshots:
       call-bound: 1.0.4
       is-array-buffer: 3.0.5
 
-  array-equal@1.0.2: {}
+  array-equal@2.0.0: {}
 
   array-unique@0.3.2: {}
 

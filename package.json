@@ -24,7 +24,7 @@
     "test:debugger": "mocha --inspect-brk tests/"
   },
   "dependencies": {
-    "array-equal": "^1.0.0",
+    "array-equal": "^2.0.0",
     "broccoli-plugin": "^5.0.0",
     "debug": "^4.1.1",
     "fs-tree-diff": "^2.0.1",
