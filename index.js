@@ -1,15 +1,13 @@
 'use strict';
 
 import { posix as path } from 'path'
-import minimatch from 'minimatch';
+import { Minimatch } from 'minimatch';
 import arrayEqual from 'array-equal';
 import Plugin from 'broccoli-plugin';
 import debug from 'debug';
 import FSTree from 'fs-tree-diff';
 import heimdall from 'heimdalljs';
 import fs from 'fs';
-
-const { Minimatch } = minimatch;
 
 function ApplyPatchesSchema() {
   this.mkdir = 0;
