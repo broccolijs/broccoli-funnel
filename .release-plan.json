@@ -1,0 +1,26 @@
+{
+  "solution": {
+    "broccoli-funnel": {
+      "impact": "major",
+      "oldVersion": "3.0.8",
+      "newVersion": "4.0.0",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "major",
+          "reason": "Appears in changelog section :boom: Breaking Change"
+        },
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./package.json"
+    }
+  },
+  "description": "## Release (2026-07-10)\n\n* broccoli-funnel 4.0.0 (major)\n\n#### :boom: Breaking Change\n* `broccoli-funnel`\n  * [#161](https://github.com/broccolijs/broccoli-funnel/pull/161) set type: \"module\" ([@mansona](https://github.com/mansona))\n  * [#157](https://github.com/broccolijs/broccoli-funnel/pull/157) Drop support for Node < 20.19 and swap to pnpm ([@mansona](https://github.com/mansona))\n\n#### :rocket: Enhancement\n* `broccoli-funnel`\n  * [#166](https://github.com/broccolijs/broccoli-funnel/pull/166) update broccoli-plugin to v6 ([@mansona](https://github.com/mansona))\n  * [#165](https://github.com/broccolijs/broccoli-funnel/pull/165) update walk-sync to v4 ([@mansona](https://github.com/mansona))\n  * [#164](https://github.com/broccolijs/broccoli-funnel/pull/164) update minimatch to v10 ([@mansona](https://github.com/mansona))\n  * [#163](https://github.com/broccolijs/broccoli-funnel/pull/163) update array-equal to v2 ([@mansona](https://github.com/mansona))\n  * [#162](https://github.com/broccolijs/broccoli-funnel/pull/162) update broccoli-plugin to v5 ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* `broccoli-funnel`\n  * [#160](https://github.com/broccolijs/broccoli-funnel/pull/160) move lint out of tests ([@mansona](https://github.com/mansona))\n  * [#158](https://github.com/broccolijs/broccoli-funnel/pull/158) start using release-plan ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+}
