@@ -1,5 +1,30 @@
 # Changelog
 
+## Release (2026-07-10)
+
+* broccoli-funnel 4.0.0 (major)
+
+#### :boom: Breaking Change
+* `broccoli-funnel`
+  * [#161](https://github.com/broccolijs/broccoli-funnel/pull/161) set type: "module" ([@mansona](https://github.com/mansona))
+  * [#157](https://github.com/broccolijs/broccoli-funnel/pull/157) Drop support for Node < 20.19 and swap to pnpm ([@mansona](https://github.com/mansona))
+
+#### :rocket: Enhancement
+* `broccoli-funnel`
+  * [#166](https://github.com/broccolijs/broccoli-funnel/pull/166) update broccoli-plugin to v6 ([@mansona](https://github.com/mansona))
+  * [#165](https://github.com/broccolijs/broccoli-funnel/pull/165) update walk-sync to v4 ([@mansona](https://github.com/mansona))
+  * [#164](https://github.com/broccolijs/broccoli-funnel/pull/164) update minimatch to v10 ([@mansona](https://github.com/mansona))
+  * [#163](https://github.com/broccolijs/broccoli-funnel/pull/163) update array-equal to v2 ([@mansona](https://github.com/mansona))
+  * [#162](https://github.com/broccolijs/broccoli-funnel/pull/162) update broccoli-plugin to v5 ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `broccoli-funnel`
+  * [#160](https://github.com/broccolijs/broccoli-funnel/pull/160) move lint out of tests ([@mansona](https://github.com/mansona))
+  * [#158](https://github.com/broccolijs/broccoli-funnel/pull/158) start using release-plan ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## v3.0.8 (2021-06-17)
 
 #### :bug: Bug Fix
